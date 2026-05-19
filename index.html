@@ -3616,23 +3616,53 @@ async function parseGanttPDF(file) {
 
   tasks.sort((a,b) => a.id_orig - b.id_orig);
 
-  // Heurística nivel 2: TitleCase entre dos nivel 1
+  // ─── Detección de jerarquía (3 niveles) por containment de fechas ───
+  // nivel 1 = UPPERCASE (ya detectado en el loop principal)
+  // nivel 2 = TitleCase + duración >=5d + contiene ≥2 tareas posteriores cuyo
+  //          rango de fechas cae dentro del propio (con tolerancia 2 días)
+  // nivel 3 = todo lo demás (incluye TODOS los hitos, sea cual sea su posición)
   let currentFase = '';
-  for (let i=0;i<tasks.length;i++) {
+  for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
+
     if (t.nivel === 1) { currentFase = t.nombre; continue; }
     t.fase = currentFase || 'EJECUCIÓN';
-    // Detecta nivel 2: nombre con TitleCase y existe siguiente tarea con id consecutivo + nombre minúscula
-    if (t.nombre[0] === t.nombre[0].toUpperCase() && /[a-záéíóú]/.test(t.nombre)) {
-      const next = tasks[i+1];
-      if (next && next.nivel !== 1 && next.id_orig === t.id_orig + 1) {
-        // si el siguiente comienza con minúscula o tiene "Inst." "Cableado" "Montaje" etc., este es nivel 2
-        const lowerStarts = ['l','m','p','c','s','f','a','e','i','b','r','o','d','t'];
-        if (next.nombre[0] === next.nombre[0].toLowerCase() && lowerStarts.includes(next.nombre[0].toLowerCase())) {
-          t.nivel = 2;
-        }
+
+    // Hitos SIEMPRE son nivel 3 (con flag es_hito que ya está)
+    if (t.es_hito) { t.nivel = 3; continue; }
+
+    // ¿es TitleCase? (primera letra mayúscula, no toda en mayúsculas, tiene minúsculas)
+    const c0 = t.nombre[0] || '';
+    const isTitleCase = c0 === c0.toUpperCase() &&
+                       t.nombre !== t.nombre.toUpperCase() &&
+                       t.nombre.length > 4 &&
+                       /[a-záéíóúñ]/.test(t.nombre);
+
+    if (!isTitleCase) { t.nivel = 3; continue; }
+    if (!t.fecha_ini || !t.fecha_fin) { t.nivel = 3; continue; }
+
+    const ini = new Date(t.fecha_ini), fin = new Date(t.fecha_fin);
+    const durDias = (fin - ini) / 86400000;
+    if (durDias < 5) { t.nivel = 3; continue; }
+
+    // Cuenta cuántas tareas posteriores tienen fechas DENTRO del rango de ésta
+    const tol = 2 * 86400000;
+    const iniT = ini.getTime() - tol, finT = fin.getTime() + tol;
+    let contained = 0;
+    for (let j = i + 1; j < Math.min(tasks.length, i + 40); j++) {
+      const n = tasks[j];
+      if (n.nivel === 1) break;  // empezó otra fase nivel 1
+      if (!n.fecha_ini || !n.fecha_fin) continue;
+      const nIni = new Date(n.fecha_ini).getTime();
+      const nFin = new Date(n.fecha_fin).getTime();
+      if (nIni >= iniT && nFin <= finT) {
+        contained++;
+      } else if (nIni > fin.getTime() + tol) {
+        break;  // ya pasó el rango — fin del grupo
       }
     }
+
+    t.nivel = (contained >= 2) ? 2 : 3;
   }
 
   return tasks;
@@ -4121,7 +4151,7 @@ function openImportPreview(parsed, fileName, existingTasks) {
       nivel: t.nivel || 3,
       responsable: t.responsable || '',
       isDup, isInvalid: invalid,
-      isChecked: !isDup && !invalid    // por default: no-duplicada y con fechas
+      isChecked: !invalid             // por default: TODAS marcadas (incluso duplicados); solo las inválidas quedan sin marcar
     };
   });
 
