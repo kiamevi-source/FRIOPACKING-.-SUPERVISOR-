@@ -2665,6 +2665,74 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 }
 @keyframes replayPulse{0%,100%{opacity:.5;}50%{opacity:.9;}}
 
+/* ════════════════════════════════════════════════
+   PHASE 4F · DEPENDENCIAS INFERIDAS
+   ════════════════════════════════════════════════ */
+
+.gantt-dep-svg{
+  position:absolute;top:0;left:0;
+  pointer-events:none;
+  z-index:3;
+  overflow:visible;
+}
+.dep-line{
+  fill:none;
+  stroke:url(#depLineGrad);
+  stroke-width:1.5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-dasharray:6 5;
+  opacity:.55;
+  animation:depFlow 1.4s linear infinite;
+  transition:opacity var(--d) var(--ease),stroke-width var(--d) var(--ease);
+}
+.dep-line.critical{
+  stroke:url(#depLineGradCrit);
+  stroke-width:2.2;
+  opacity:.75;
+  animation:depFlow .9s linear infinite;
+  filter:drop-shadow(0 0 4px rgba(220,38,38,.30));
+}
+.dep-line.late{
+  stroke:url(#depLineGradLate);
+  stroke-width:2.2;
+  opacity:.85;
+  animation:depFlow .7s linear infinite;
+  filter:drop-shadow(0 0 6px rgba(220,38,38,.40));
+}
+.dep-line.dim{ opacity:.10; animation:none; }
+.dep-line.highlight{
+  opacity:1;
+  stroke-width:2.6;
+  animation:depFlow .55s linear infinite;
+  filter:drop-shadow(0 0 6px rgba(124,58,237,.45));
+}
+@keyframes depFlow{
+  from{stroke-dashoffset:0;}
+  to  {stroke-dashoffset:-22;}
+}
+.dep-arrow{
+  fill:url(#depArrowGrad);
+  transition:opacity var(--d) var(--ease);
+}
+.dep-arrow.critical{fill:url(#depArrowGradCrit);}
+.dep-arrow.late{fill:url(#depArrowGradLate);}
+.dep-arrow.dim{opacity:.20;}
+
+/* Hover state: cuando hover row, atenuar las dependencias no relacionadas */
+.gantt-board.deps-hover-active .dep-line:not(.highlight){opacity:.10;animation:none;}
+.gantt-board.deps-hover-active .gantt-bar:not(.dep-related),
+.gantt-board.deps-hover-active .gantt-milestone:not(.dep-related){opacity:.35;}
+.gantt-bar.dep-related,.gantt-milestone.dep-related{
+  filter:drop-shadow(0 0 8px rgba(124,58,237,.55));
+  outline:2px solid rgba(124,58,237,.55);
+  outline-offset:1px;
+}
+.gantt-row.dep-related{
+  background:linear-gradient(90deg,rgba(124,58,237,.10),transparent 70%)!important;
+  box-shadow:inset 3px 0 0 var(--violet-500);
+}
+
 /* Validation report (post-import) */
 .import-report{
   margin:0 20px 14px;
@@ -3058,6 +3126,7 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <button class="lyr-toggle" data-layer="forecast" onclick="toggleGanttLayer('forecast')"><span class="lyr-dot"></span>Forecast</button>
           <button class="lyr-toggle" data-layer="critica" onclick="toggleGanttLayer('critica')"><span class="lyr-dot"></span>Ruta crítica</button>
           <button class="lyr-toggle" data-layer="sinmov" onclick="toggleGanttLayer('sinmov')"><span class="lyr-dot"></span>Sin movimiento</button>
+          <button class="lyr-toggle" data-layer="deps" onclick="toggleGanttLayer('deps')"><span class="lyr-dot" style="background:#7c3aed!important"></span>Dependencias</button>
         </div>
 
         <!-- ── Alertas operativas (top 6) ── -->
@@ -5776,7 +5845,7 @@ const _ganttState = {
   tasks: [],
   scale: 'month',
   filter: 'all',
-  layers: { health:true, plan:false, forecast:false, critica:false, sinmov:false },
+  layers: { health:true, plan:false, forecast:false, critica:false, sinmov:false, deps:false },
   selectedId: null
 };
 
@@ -5908,6 +5977,291 @@ function analizarTodas() {
 function getAnalysis(t) {
   const id = t.id || t.orden;
   return _ganttAnalysis.get(id) || analizarTarea(t, new Date());
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4F · DEPENDENCIAS INFERIDAS
+// ═══════════════════════════════════════════════
+let _ganttDeps = [];          // { from, to, type, critical }
+let _depPositions = new Map();// taskId → {left, right, top, bottom, isMilestone}
+
+// Infiere dependencias entre tareas usando heurísticas:
+// 1) Fin de A ≈ inicio de B (diff ≤ 3d) + misma fase/categoría → A→B
+// 2) Misma sub-categoría + consecutivas en orden → A→B
+// 3) Hito al final de fase (lo predecedes todas las tareas anteriores de la misma fase)
+// 4) Ruta crítica: todas las tareas críticas consecutivas dentro de una fase
+function inferDependencies(tasks) {
+  if (!tasks || tasks.length < 2) return [];
+  const visibles = tasks.filter(t => t.fecha_inicio_base && t.fecha_fin_base);
+  if (visibles.length < 2) return [];
+
+  const byCat = {};
+  visibles.forEach(t => {
+    const c = t.categoria || autoDetectCategory(t.nombre_tarea, t.es_hito);
+    (byCat[c] = byCat[c] || []).push(t);
+  });
+
+  const deps = [];
+  const dedup = new Set();
+  const addDep = (a, b, type) => {
+    if (!a.id && !a.orden) return;
+    if (!b.id && !b.orden) return;
+    const ka = a.id || a.orden, kb = b.id || b.orden;
+    if (ka === kb) return;
+    const key = ka + '→' + kb;
+    if (dedup.has(key)) return;
+    dedup.add(key);
+    deps.push({
+      from: ka, to: kb, type,
+      critical: !!(a.es_critico && b.es_critico)
+    });
+  };
+
+  // Heurística 1+2: por categoría, ordenar por inicio y conectar A→B si fin(A) ≈ inicio(B) (tolerancia 4d)
+  // o si simplemente son consecutivos por inicio y B empieza después que A termina dentro del mismo fase.
+  Object.values(byCat).forEach(grupo => {
+    const arr = grupo.filter(t => !t.es_hito || true);
+    arr.sort((a,b) => new Date(a.fecha_inicio_base) - new Date(b.fecha_inicio_base));
+    for (let i=0;i<arr.length;i++) {
+      const a = arr[i];
+      const finA = new Date(a.fecha_fin_base).getTime();
+      // mirar las siguientes 8 tareas (no todo el array para no saturar)
+      for (let j=i+1;j<Math.min(arr.length, i+8);j++) {
+        const b = arr[j];
+        const iniB = new Date(b.fecha_inicio_base).getTime();
+        const dDias = (iniB - finA) / 86400000;
+        if (dDias >= -2 && dDias <= 4) {
+          // Misma sub-fase si tienen ancestor común — por simplicidad usamos misma fase
+          if ((a.fase || '') === (b.fase || '') || a.categoria === b.categoria) {
+            addDep(a, b, 'seq');
+          }
+        }
+        if (dDias > 4) break; // ya no hay sucesores cercanos
+      }
+    }
+  });
+
+  // Heurística 3: hitos predecidos por la última tarea no-hito anterior dentro de la misma fase
+  visibles.filter(t => t.es_hito).forEach(h => {
+    const fIni = new Date(h.fecha_inicio_base).getTime();
+    const prev = visibles
+      .filter(t => !t.es_hito && t.fase === h.fase && t.fecha_fin_base)
+      .filter(t => new Date(t.fecha_fin_base).getTime() <= fIni + 3*86400000)
+      .sort((a,b) => new Date(b.fecha_fin_base) - new Date(a.fecha_fin_base))[0];
+    if (prev) addDep(prev, h, 'hito');
+  });
+
+  // Heurística 4: cadena crítica → conectar consecutivas dentro de mismo fase
+  const criticos = visibles.filter(t => t.es_critico);
+  const porFase = {};
+  criticos.forEach(t => { (porFase[t.fase||''] = porFase[t.fase||''] || []).push(t); });
+  Object.values(porFase).forEach(arr => {
+    arr.sort((a,b) => new Date(a.fecha_inicio_base) - new Date(b.fecha_inicio_base));
+    for (let i=0;i<arr.length-1;i++) {
+      addDep(arr[i], arr[i+1], 'crit');
+    }
+  });
+
+  return deps;
+}
+
+// Calcula posiciones (left/right/top) de cada bar/milestone dentro del time-body
+function captureBarPositions() {
+  _depPositions.clear();
+  const time = document.querySelector('#gantt-board .time-col');
+  if (!time) return;
+  const timeRect = time.getBoundingClientRect();
+  const bodyEl = time.querySelector('div[style*="position:relative"]');
+  if (!bodyEl) return;
+  const baseTop = bodyEl.getBoundingClientRect().top - timeRect.top + time.scrollTop;
+  bodyEl.querySelectorAll('.gantt-time-row').forEach((row,i) => {
+    const rowRect = row.getBoundingClientRect();
+    const rowTop = rowRect.top - timeRect.top + time.scrollTop;
+    const rowH = rowRect.height;
+    row.querySelectorAll('.gantt-bar,.gantt-milestone').forEach(el => {
+      const id = el.dataset.id;
+      if (!id) return;
+      const elRect = el.getBoundingClientRect();
+      const isHito = el.classList.contains('gantt-milestone');
+      const leftPx = elRect.left - timeRect.left + time.scrollLeft;
+      const widthPx = elRect.width;
+      const topPx = rowTop;
+      _depPositions.set(String(id), {
+        left: leftPx,
+        right: leftPx + widthPx,
+        top: topPx,
+        bottom: topPx + rowH,
+        center: topPx + rowH/2,
+        isMilestone: isHito,
+        rowIdx: i
+      });
+    });
+  });
+}
+
+// Dibuja las líneas SVG de dependencias dentro del time-body
+function renderDependencyLines() {
+  // Eliminar SVG previo
+  const time = document.querySelector('#gantt-board .time-col');
+  if (!time) return;
+  const oldSvg = time.querySelector('.gantt-dep-svg');
+  if (oldSvg) oldSvg.remove();
+  if (!_ganttState.layers.deps || !_ganttDeps.length) return;
+
+  // Asegurar posiciones actualizadas
+  captureBarPositions();
+
+  const bodyEl = time.querySelector('div[style*="position:relative"]');
+  if (!bodyEl) return;
+  const totalW = bodyEl.style.width ? parseInt(bodyEl.style.width) : bodyEl.clientWidth;
+  const totalH = bodyEl.clientHeight;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.classList.add('gantt-dep-svg');
+  svg.setAttribute('width', totalW);
+  svg.setAttribute('height', totalH);
+  svg.style.cssText = `width:${totalW}px;height:${totalH}px;`;
+
+  // Defs: gradientes para línea + arrow
+  const defs = document.createElementNS(svgNS, 'defs');
+  defs.innerHTML = `
+    <linearGradient id="depLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity=".70"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity=".70"/>
+    </linearGradient>
+    <linearGradient id="depLineGradCrit" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="depLineGradLate" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="depArrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0891B2"/>
+    </linearGradient>
+    <linearGradient id="depArrowGradCrit" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="depArrowGradLate" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+  `;
+  svg.appendChild(defs);
+
+  const hoyStr = new Date().toISOString().slice(0,10);
+
+  _ganttDeps.forEach((d, idx) => {
+    const pa = _depPositions.get(String(d.from));
+    const pb = _depPositions.get(String(d.to));
+    if (!pa || !pb) return;
+
+    // Decidir critical/late visual
+    const tFrom = (_ganttState.tasks||[]).find(t => String(t.id||t.orden) === String(d.from));
+    const tTo   = (_ganttState.tasks||[]).find(t => String(t.id||t.orden) === String(d.to));
+    const late = (tFrom && parseFloat(tFrom.pct_avance||0) < 100 && tFrom.fecha_fin_base && tFrom.fecha_fin_base < hoyStr);
+    const crit = d.critical || d.type === 'crit';
+    let lineClass = 'dep-line';
+    let arrowClass = 'dep-arrow';
+    if (late) { lineClass += ' late'; arrowClass += ' late'; }
+    else if (crit) { lineClass += ' critical'; arrowClass += ' critical'; }
+
+    // Punto de salida: borde derecho del bar A
+    const x1 = pa.right;
+    const y1 = pa.center;
+    // Punto de entrada: borde izquierdo del bar B (o el centro si es hito)
+    const x2 = pb.isMilestone ? (pb.left + (pb.right - pb.left)/2) : pb.left;
+    const y2 = pb.center;
+
+    // Path L-shape: dx pequeño, luego vertical, luego horizontal
+    const elbow = Math.min(14, Math.max(6, (x2 - x1) / 3));
+    const arrowH = 6;
+    let path;
+    if (x2 > x1 + elbow*2) {
+      // Caso normal: A termina antes de B empieza con espacio
+      const mx = x1 + elbow;
+      path = `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2 - arrowH} ${y2}`;
+    } else {
+      // Caso solapado: rodea por debajo
+      const dy = (y2 > y1 ? 1 : -1) * (Math.abs(pa.bottom - pa.top)/2 + 6);
+      path = `M ${x1} ${y1} L ${x1 + elbow} ${y1} L ${x1 + elbow} ${y1 + dy} L ${x2 - elbow} ${y1 + dy} L ${x2 - elbow} ${y2} L ${x2 - arrowH} ${y2}`;
+    }
+
+    const pathEl = document.createElementNS(svgNS, 'path');
+    pathEl.setAttribute('d', path);
+    pathEl.setAttribute('class', lineClass);
+    pathEl.dataset.from = d.from;
+    pathEl.dataset.to = d.to;
+    svg.appendChild(pathEl);
+
+    // Arrowhead
+    const arrow = document.createElementNS(svgNS, 'polygon');
+    arrow.setAttribute('points', `${x2 - arrowH},${y2 - 4} ${x2},${y2} ${x2 - arrowH},${y2 + 4}`);
+    arrow.setAttribute('class', arrowClass);
+    arrow.dataset.from = d.from;
+    arrow.dataset.to = d.to;
+    svg.appendChild(arrow);
+  });
+
+  bodyEl.appendChild(svg);
+}
+
+// Hover de cadena: al pasar mouse sobre una barra, resalta sus dependencias y atenúa el resto
+function setupDependencyHover() {
+  const board = document.getElementById('gantt-board');
+  if (!board) return;
+  const onEnter = (e) => {
+    if (!_ganttState.layers.deps) return;
+    const el = e.target.closest('.gantt-bar,.gantt-milestone,.gantt-row');
+    if (!el || !el.dataset || !el.dataset.id) return;
+    const id = String(el.dataset.id);
+    // Recopilar la cadena: todas las dependencias que tocan este id (transitivamente, 1-hop adelante y atrás)
+    const related = new Set([id]);
+    _ganttDeps.forEach(d => {
+      const f = String(d.from), t = String(d.to);
+      if (f === id) related.add(t);
+      if (t === id) related.add(f);
+    });
+    board.classList.add('deps-hover-active');
+    document.querySelectorAll('.gantt-bar, .gantt-milestone').forEach(b => {
+      if (related.has(String(b.dataset.id))) b.classList.add('dep-related');
+      else b.classList.remove('dep-related');
+    });
+    document.querySelectorAll('.gantt-row').forEach(r => {
+      if (related.has(String(r.dataset.id))) r.classList.add('dep-related');
+      else r.classList.remove('dep-related');
+    });
+    // Resaltar líneas relacionadas
+    const svg = board.querySelector('.gantt-dep-svg');
+    if (svg) {
+      svg.querySelectorAll('.dep-line, .dep-arrow').forEach(line => {
+        const isRel = String(line.dataset.from) === id || String(line.dataset.to) === id;
+        line.classList.toggle('highlight', isRel);
+        line.classList.toggle('dim', !isRel);
+      });
+    }
+  };
+  const onLeave = () => {
+    board.classList.remove('deps-hover-active');
+    document.querySelectorAll('.dep-related').forEach(el => el.classList.remove('dep-related'));
+    const svg = board.querySelector('.gantt-dep-svg');
+    if (svg) svg.querySelectorAll('.dep-line, .dep-arrow').forEach(l => { l.classList.remove('highlight'); l.classList.remove('dim'); });
+  };
+  // Event delegation (limpiar listeners viejos)
+  if (board._depHoverWired) return;
+  board._depHoverWired = true;
+  board.addEventListener('mouseover', onEnter);
+  board.addEventListener('mouseleave', onLeave, true);
+  // También al salir de cualquier row
+  board.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest('.gantt-bar,.gantt-milestone,.gantt-row')) {
+      onLeave();
+    }
+  });
 }
 
 // ── Iconos SVG inline reutilizables ──
@@ -7079,6 +7433,12 @@ function renderGanttBoard() {
   updateGanttStats(all);
   renderGanttAlerts();
   refreshRecoveryBanner();
+  // Inferir dependencias y dibujar líneas si la capa está activa
+  _ganttDeps = inferDependencies(_ganttState.tasks || []);
+  setTimeout(() => {
+    renderDependencyLines();
+    setupDependencyHover();
+  }, 80);
 }
 
 // Helper para abrir el drill-down desde onclick inline
