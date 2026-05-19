@@ -2096,6 +2096,126 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 /* Empty patterns */
 .dim-loading{color:var(--text-3);font-size:11.5px;padding:14px;text-align:center;}
 
+/* ─── EQUIPOS PMO PANEL (Dashboard + Gantt) ─── */
+.equipos-section{
+  background:var(--glass-strong);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  box-shadow:var(--sh-2);margin-bottom:16px;overflow:hidden;
+  position:relative;
+}
+.equipos-section::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle 320px at 100% 0%,rgba(46,125,209,.08),transparent 55%),
+             radial-gradient(circle 240px at 0% 100%,rgba(8,145,178,.06),transparent 60%);
+}
+.equipos-head{
+  position:relative;z-index:1;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(247,249,253,.45),rgba(247,249,253,0));
+}
+.equipos-head .eq-title{
+  font-size:12.5px;font-weight:800;color:var(--navy-800);letter-spacing:.02em;
+  display:flex;align-items:center;gap:8px;
+}
+.equipos-head .eq-title svg{width:16px;height:16px;color:var(--brand-600);}
+.equipos-head .eq-spacer{flex:1;}
+.equipos-head .eq-live{
+  display:inline-flex;align-items:center;gap:6px;
+  height:24px;padding:0 10px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.06em;
+  background:var(--success-bg);color:#166534;
+  border:1px solid rgba(22,163,74,.20);
+}
+.equipos-head .eq-live .eq-live-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--success);
+  animation:pmoLive 2s ease-in-out infinite;
+}
+.eq-stats{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 20px 8px;position:relative;z-index:1;
+}
+.eq-stat-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  height:34px;padding:0 14px;border-radius:999px;
+  background:rgba(255,255,255,.75);border:1px solid var(--border);
+  font-size:11.5px;font-weight:700;color:var(--text-2);
+  cursor:pointer;transition:all var(--d) var(--ease);font-family:inherit;
+}
+.eq-stat-pill:hover{transform:translateY(-1px);box-shadow:var(--sh-2);background:#fff;}
+.eq-stat-pill .pill-num{font-weight:900;color:var(--navy-800);font-variant-numeric:tabular-nums;font-size:14px;line-height:1;}
+.eq-stat-pill.culminado{background:linear-gradient(135deg,rgba(22,163,74,.10),rgba(34,197,94,.06));color:#166534;border-color:rgba(22,163,74,.20);}
+.eq-stat-pill.culminado .pill-num{color:#166534;}
+.eq-stat-pill.transito{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(217,119,6,.06));color:#92400e;border-color:rgba(217,119,6,.20);animation:liveBreath 2.4s ease-in-out infinite;}
+.eq-stat-pill.transito .pill-num{color:#92400e;}
+.eq-stat-pill.produccion{background:linear-gradient(135deg,rgba(46,125,209,.10),rgba(8,145,178,.06));color:var(--brand-700);border-color:rgba(46,125,209,.20);}
+.eq-stat-pill.produccion .pill-num{color:var(--brand-700);}
+.eq-stat-pill.pendiente{background:rgba(15,23,42,.04);color:var(--text-2);}
+.eq-stat-pill.pendiente .pill-num{color:var(--text);}
+.eq-stat-pill.total{background:linear-gradient(135deg,#0B1739,#1B2D5B);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(11,23,57,.18);}
+.eq-stat-pill.total .pill-num{color:#fff;}
+.eq-stat-pill.active{box-shadow:0 0 0 2px var(--teal-500),var(--sh-2);transform:translateY(-1px);}
+
+.eq-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:10px;padding:8px 20px 20px;
+  position:relative;z-index:1;
+  max-height:360px;overflow-y:auto;
+}
+.eq-grid::-webkit-scrollbar{width:8px;}
+.eq-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px;}
+
+.eq-card{
+  display:flex;gap:10px;padding:11px 13px;
+  background:linear-gradient(135deg,rgba(46,125,209,.04),rgba(8,145,178,.02));
+  border:1px solid var(--border);border-radius:12px;
+  transition:all var(--d) var(--ease);
+  animation:tpFade .35s var(--ease-out) both;
+  position:relative;overflow:hidden;
+}
+.eq-card:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:var(--border-strong);}
+.eq-card .eq-avatar{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--brand-500),var(--teal-600));
+  color:#fff;font-size:13px;font-weight:900;letter-spacing:-.01em;
+  box-shadow:0 4px 10px rgba(46,125,209,.25),inset 0 1px 0 rgba(255,255,255,.20);
+}
+.eq-card.culminado .eq-avatar{background:linear-gradient(135deg,var(--success-2),var(--success));box-shadow:0 4px 10px rgba(22,163,74,.25);}
+.eq-card.transito .eq-avatar{background:linear-gradient(135deg,#fbbf24,var(--warning));box-shadow:0 4px 10px rgba(217,119,6,.25);}
+.eq-card.pendiente .eq-avatar{background:linear-gradient(135deg,#94a3b8,#64748b);}
+.eq-card .eq-info{flex:1;min-width:0;}
+.eq-card .eq-tipo{
+  font-size:12.5px;font-weight:800;color:var(--navy-800);
+  text-transform:uppercase;letter-spacing:.02em;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.eq-card .eq-prov{
+  font-size:11px;color:var(--text-2);margin-top:2px;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.eq-card .eq-meta{
+  display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;
+  font-size:9.5px;color:var(--text-3);
+}
+.eq-card .eq-status{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:800;letter-spacing:.06em;
+  padding:2px 7px;border-radius:999px;
+}
+.eq-card .eq-status.culminado{background:var(--success-bg);color:#166534;}
+.eq-card .eq-status.transito{background:var(--warning-bg);color:#92400e;}
+.eq-card .eq-status.produccion{background:rgba(46,125,209,.10);color:var(--brand-700);}
+.eq-card .eq-status.pendiente{background:rgba(15,23,42,.06);color:var(--text-2);}
+.eq-card .eq-doc{font-variant-numeric:tabular-nums;color:var(--text-3);}
+.eq-empty{
+  padding:32px 20px;text-align:center;color:var(--text-3);font-size:12px;
+  position:relative;z-index:1;
+}
+.eq-empty .ic{font-size:32px;opacity:.5;margin-bottom:8px;}
+
 /* ─── PMO Live Bridge pill ─── */
 .pmo-pill{
   display:inline-flex;align-items:center;gap:8px;
@@ -2387,6 +2507,22 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
         </div>
       </section>
 
+      <!-- ─── EQUIPOS PMO (live) ─── -->
+      <section class="equipos-section" id="equipos-dash-card">
+        <div class="equipos-head">
+          <span class="eq-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Equipos del proyecto · PMO Live
+          </span>
+          <span class="eq-spacer"></span>
+          <span class="eq-live" id="equipos-dash-live"><span class="eq-live-dot"></span><span>Live · —</span></span>
+          <button class="btn btn-outline btn-sm" onclick="syncPMO(true)" title="Sincronizar PMO">⟳ Refrescar</button>
+        </div>
+        <div id="equipos-dash-body">
+          <div class="eq-empty"><div class="ic">🚢</div>Conectando con PMO…</div>
+        </div>
+      </section>
+
       <!-- ─── HISTORIAL DE REPORTES ─── -->
       <div class="sec-card">
         <div class="sec-head"><span class="sec-title">Historial de reportes</span></div>
@@ -2410,6 +2546,22 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <button class="btn btn-outline btn-sm" onclick="confirmarLimpiarGantt()" title="Borrar todo el cronograma del proyecto actual">Limpiar</button>
           <button class="btn btn-primary btn-sm" onclick="mostrarFormGantt()">+ Tarea</button>
         </div>
+
+        <!-- ─── EQUIPOS PMO (live, también arriba del cronograma) ─── -->
+        <section class="equipos-section" id="equipos-gantt-card" style="margin:14px 20px 16px;">
+          <div class="equipos-head">
+            <span class="eq-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              Equipos del proyecto · PMO Live
+            </span>
+            <span class="eq-spacer"></span>
+            <span class="eq-live" id="equipos-gantt-live"><span class="eq-live-dot"></span><span>Live · —</span></span>
+            <button class="btn btn-outline btn-sm" onclick="syncPMO(true)">⟳ Refrescar</button>
+          </div>
+          <div id="equipos-gantt-body">
+            <div class="eq-empty"><div class="ic">🚢</div>Conectando con PMO…</div>
+          </div>
+        </section>
 
         <!-- ─── Dashboard de Categorías (cards top) ─── -->
         <div class="gantt-cat-dash" id="gantt-cat-dash"></div>
@@ -3092,6 +3244,8 @@ async function cargarProyecto() {
     cargarContratast(),
     cargarRiesgos()
   ]);
+  // Refrescar paneles de Equipos PMO con el proyecto recién seleccionado
+  renderAllEquipos();
 }
 
 // ═══════════════════════════════════════════════
@@ -3923,6 +4077,99 @@ function pmoCurrentEquipos() {
     const p = (e.proj_csv||'').toLowerCase();
     return p === nm || p.includes(nm) || nm.includes(p) || (cod && p.includes(cod));
   });
+}
+
+// Clasificar estado del equipo
+function _eqStatusClass(st) {
+  const s = (st||'').toLowerCase();
+  if (/culmin|recib|entreg|listo/i.test(s)) return 'culminado';
+  if (/tr[áa]nsito|embarc|cami[oó]n|carg|nave/i.test(s)) return 'transito';
+  if (/produc|fabric/i.test(s)) return 'produccion';
+  return 'pendiente';
+}
+
+// Renderiza el panel de Equipos PMO (reusable para Dashboard y Gantt)
+function renderEquiposPanel(bodyId, liveId) {
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+  const equipos = pmoCurrentEquipos();
+  // Live indicator
+  if (liveId) {
+    const live = document.getElementById(liveId);
+    if (live) {
+      const ts = _pmoState.lastFetch
+        ? new Date(_pmoState.lastFetch).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})
+        : '—';
+      const lblWrap = live.querySelector('span:last-child');
+      if (lblWrap) lblWrap.textContent = `Live · ${ts}`;
+    }
+  }
+
+  if (!currentProyecto) {
+    body.innerHTML = `<div class="eq-empty"><div class="ic">🛠</div>Selecciona un proyecto para ver equipos.</div>`;
+    return;
+  }
+  if (_pmoState.status === 'error') {
+    body.innerHTML = `<div class="eq-empty"><div class="ic">⚠</div>PMO sin conexión. <span style="color:var(--teal-700);cursor:pointer" onclick="syncPMO(true)">Reintentar</span></div>`;
+    return;
+  }
+  if (_pmoState.status === 'idle' || _pmoState.status === 'syncing') {
+    body.innerHTML = `<div class="eq-empty"><div class="ic">⟳</div>Sincronizando con PMO…</div>`;
+    return;
+  }
+  if (equipos.length === 0) {
+    body.innerHTML = `<div class="eq-empty"><div class="ic">📦</div>Este proyecto no tiene equipos asignados en el PMO.<br><span style="font-size:10.5px;">Si agregas equipos en el Centro de Control PMO aparecerán aquí en <60s.</span></div>`;
+    return;
+  }
+
+  // Agrupar por estado
+  const groups = { culminado:[], transito:[], produccion:[], pendiente:[] };
+  equipos.forEach(e => { groups[_eqStatusClass(e.st)].push(e); });
+
+  const statsHtml = `<div class="eq-stats">
+    <button class="eq-stat-pill total"><span class="pill-num">${equipos.length}</span> total</button>
+    ${groups.culminado.length ? `<div class="eq-stat-pill culminado"><span class="pill-num">${groups.culminado.length}</span> ✓ Culminado</div>` : ''}
+    ${groups.transito.length ? `<div class="eq-stat-pill transito"><span class="pill-num">${groups.transito.length}</span> 🚢 En tránsito</div>` : ''}
+    ${groups.produccion.length ? `<div class="eq-stat-pill produccion"><span class="pill-num">${groups.produccion.length}</span> 🏭 Producción</div>` : ''}
+    ${groups.pendiente.length ? `<div class="eq-stat-pill pendiente"><span class="pill-num">${groups.pendiente.length}</span> ⏱ Pendiente</div>` : ''}
+  </div>`;
+
+  // Ordenar: culminado al final, tránsito/produc primero
+  const sortOrder = { transito:0, produccion:1, pendiente:2, culminado:3 };
+  const sorted = [...equipos].sort((a,b) => {
+    const sa = sortOrder[_eqStatusClass(a.st)] ?? 5;
+    const sb = sortOrder[_eqStatusClass(b.st)] ?? 5;
+    return sa - sb;
+  });
+
+  const renderEq = e => {
+    const stClass = _eqStatusClass(e.st);
+    const ini = (e.tipo||'??').replace(/[^A-ZÁÉÍÓÚÑ]/gi,'').slice(0,2).toUpperCase() || (e.tipo||'').slice(0,2).toUpperCase();
+    return `<div class="eq-card ${stClass}">
+      <div class="eq-avatar">${ini}</div>
+      <div class="eq-info">
+        <div class="eq-tipo">${(e.tipo||'—').toLowerCase()}</div>
+        <div class="eq-prov">${e.proveedor||'—'}${e.origen?' · '+e.origen:''}</div>
+        <div class="eq-meta">
+          <span class="eq-status ${stClass}">${e.st||'—'}</span>
+          ${e.doc?`<span class="eq-doc">${e.doc}</span>`:''}
+          ${e.mod?`<span>${e.mod}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  };
+
+  body.innerHTML = statsHtml + `<div class="eq-grid">${sorted.map(renderEq).join('')}</div>`;
+}
+
+// Auto-actualizar ambos paneles cuando llegan cambios del PMO
+function renderAllEquipos() {
+  renderEquiposPanel('equipos-dash-body', 'equipos-dash-live');
+  renderEquiposPanel('equipos-gantt-body', 'equipos-gantt-live');
+}
+// Suscripción una vez (al cargar el módulo)
+if (typeof _pmoState !== 'undefined') {
+  pmoSubscribe(() => renderAllEquipos());
 }
 
 // ═══════════════════════════════════════════════
