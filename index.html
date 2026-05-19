@@ -2733,6 +2733,146 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
   box-shadow:inset 3px 0 0 var(--violet-500);
 }
 
+/* ════════════════════════════════════════════════
+   PHASE 4H · PRODUCTIVIDAD ANALYTICS
+   ════════════════════════════════════════════════ */
+.prod-section{
+  background:var(--glass-strong);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  box-shadow:var(--sh-2);margin-bottom:16px;overflow:hidden;
+  position:relative;
+}
+.prod-section::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle 280px at 100% 0%,rgba(124,58,237,.06),transparent 55%),
+             radial-gradient(circle 220px at 0% 100%,rgba(8,145,178,.05),transparent 60%);
+}
+.prod-head{
+  position:relative;z-index:1;padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(247,249,253,.50),rgba(247,249,253,0));
+}
+.prod-head .pr-title{font-size:12.5px;font-weight:800;color:var(--navy-800);letter-spacing:.02em;display:flex;align-items:center;gap:8px;}
+.prod-head .pr-title svg{width:16px;height:16px;color:var(--violet-500);}
+.prod-head .pr-range{
+  display:inline-flex;align-items:center;gap:3px;
+  background:var(--surface-2);padding:3px;border-radius:8px;border:1px solid var(--border);
+}
+.prod-head .pr-range button{
+  height:24px;padding:0 10px;border:none;background:transparent;
+  font-size:10.5px;font-weight:700;color:var(--text-2);
+  cursor:pointer;border-radius:6px;font-family:inherit;
+  transition:all var(--d) var(--ease);
+}
+.prod-head .pr-range button.active{background:#fff;color:var(--navy-800);box-shadow:var(--sh-1);}
+.prod-head .pr-spacer{flex:1;}
+.prod-head .pr-empty-msg{font-size:11px;color:var(--text-3);}
+
+.prod-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;
+  padding:14px 20px 6px;position:relative;z-index:1;
+}
+.prod-card{
+  position:relative;
+  background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.65));
+  border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;
+  transition:all var(--d) var(--ease);overflow:hidden;
+  cursor:pointer;text-align:left;font-family:inherit;color:inherit;width:100%;
+  display:flex;flex-direction:column;gap:8px;
+}
+.prod-card:hover{transform:translateY(-2px);box-shadow:var(--sh-3);border-color:var(--border-strong);}
+.prod-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--pr-color,#7c3aed),var(--pr-color-dark,#6d28d9));
+}
+.prod-card[data-cat="PLANOS"]{--pr-color:#7c3aed;--pr-color-dark:#6d28d9;}
+.prod-card[data-cat="LICITACION"]{--pr-color:#2E7DD1;--pr-color-dark:#1d4ed8;}
+.prod-card[data-cat="COMPRA"]{--pr-color:#d97706;--pr-color-dark:#b45309;}
+.prod-card[data-cat="INSTALACION"]{--pr-color:#0891B2;--pr-color-dark:#0E7490;}
+.prod-card[data-cat="PRUEBAS"]{--pr-color:#16a34a;--pr-color-dark:#15803d;}
+.prod-card[data-cat="HITO"]{--pr-color:#f59e0b;--pr-color-dark:#d97706;}
+.prod-card[data-cat="CIERRE"]{--pr-color:#64748b;--pr-color-dark:#475569;}
+
+.pc-head{display:flex;align-items:center;gap:8px;}
+.pc-icon{
+  width:30px;height:30px;border-radius:9px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--pr-color,#7c3aed),var(--pr-color-dark,#6d28d9));
+  color:#fff;
+  box-shadow:0 4px 10px var(--pr-color-glow,rgba(124,58,237,.20));
+}
+.pc-icon svg{width:14px;height:14px;}
+.pc-name{font-size:10px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.pc-tit{font-size:13px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;line-height:1.2;flex:1;}
+.pc-trend{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;
+  padding:3px 8px;border-radius:999px;
+}
+.pc-trend.up{background:var(--success-bg);color:#166534;}
+.pc-trend.down{background:var(--danger-bg);color:#991b1b;}
+.pc-trend.flat{background:var(--surface-2);color:var(--text-2);}
+.pc-trend svg{width:10px;height:10px;}
+
+.pc-velo{
+  font-size:24px;font-weight:900;color:var(--navy-800);letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;line-height:1.05;
+}
+.pc-velo .u{font-size:12px;font-weight:700;color:var(--text-3);margin-left:2px;}
+.pc-sub{font-size:10.5px;color:var(--text-3);line-height:1.3;}
+.pc-spark{height:32px;margin-top:4px;}
+.pc-spark svg{width:100%;height:100%;overflow:visible;}
+.pc-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;font-size:10.5px;color:var(--text-2);}
+.pc-meta .v{font-weight:800;color:var(--navy-800);font-variant-numeric:tabular-nums;}
+
+/* Top performers section */
+.prod-rank{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  padding:6px 20px 18px;position:relative;z-index:1;
+}
+@media (max-width:768px){ .prod-rank{grid-template-columns:1fr;} }
+.prod-rank-card{
+  background:rgba(255,255,255,.65);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px;
+}
+.prod-rank-card.up{background:linear-gradient(135deg,rgba(22,163,74,.06),rgba(34,197,94,.03));border-color:rgba(22,163,74,.20);}
+.prod-rank-card.down{background:linear-gradient(135deg,rgba(220,38,38,.06),rgba(239,68,68,.03));border-color:rgba(220,38,38,.20);}
+.prod-rank-tit{
+  font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.prod-rank-tit svg{width:13px;height:13px;}
+.prod-rank-card.up .prod-rank-tit{color:#166534;}
+.prod-rank-card.down .prod-rank-tit{color:#991b1b;}
+.prod-rank-list{display:flex;flex-direction:column;gap:6px;}
+.prod-rank-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:8px;
+  background:rgba(255,255,255,.55);cursor:pointer;
+  transition:all var(--d) var(--ease);
+}
+.prod-rank-row:hover{background:#fff;box-shadow:var(--sh-1);}
+.prod-rank-row .rank-num{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:grid;place-items:center;
+  background:var(--surface-2);color:var(--text-2);
+  font-size:10px;font-weight:900;
+}
+.prod-rank-card.up .prod-rank-row:nth-child(1) .rank-num{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;}
+.prod-rank-card.up .prod-rank-row:nth-child(2) .rank-num{background:linear-gradient(135deg,#a3a3a3,#737373);color:#fff;}
+.prod-rank-card.up .prod-rank-row:nth-child(3) .rank-num{background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;}
+.prod-rank-row .rank-name{flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--navy-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prod-rank-row .rank-vel{font-size:10.5px;font-weight:800;color:var(--text-2);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.prod-rank-row .rank-vel.up{color:var(--success);}
+.prod-rank-row .rank-vel.down{color:var(--danger);}
+
+.prod-empty{padding:32px 20px;text-align:center;color:var(--text-3);font-size:12px;position:relative;z-index:1;}
+.prod-empty .ic{font-size:32px;opacity:.50;margin-bottom:8px;}
+
 /* Validation report (post-import) */
 .import-report{
   margin:0 20px 14px;
@@ -2995,6 +3135,26 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <div class="sec-body">
             <div class="feed" id="feed"><div class="loading"><span class="spinner"></span>Cargando feed…</div></div>
           </div>
+        </div>
+      </section>
+
+      <!-- ─── PRODUCTIVIDAD ANALYTICS ─── -->
+      <section class="prod-section" id="prod-section">
+        <div class="prod-head">
+          <span class="pr-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            Productividad operativa
+          </span>
+          <div class="pr-range" id="pr-range">
+            <button class="active" data-r="7" onclick="prodSetRange(7)">7d</button>
+            <button data-r="14" onclick="prodSetRange(14)">14d</button>
+            <button data-r="30" onclick="prodSetRange(30)">30d</button>
+          </div>
+          <span class="pr-spacer"></span>
+          <span class="pr-empty-msg" id="pr-empty-msg"></span>
+        </div>
+        <div id="prod-body">
+          <div class="prod-empty"><div class="ic">📈</div>Cargando análisis…</div>
         </div>
       </section>
 
@@ -3792,6 +3952,8 @@ async function cargarProyecto() {
   ]);
   // Refrescar paneles de Equipos PMO con el proyecto recién seleccionado
   renderAllEquipos();
+  // Cargar Productividad Analytics
+  cargarProductividad();
 }
 
 // ═══════════════════════════════════════════════
@@ -4632,6 +4794,232 @@ function _eqStatusClass(st) {
   if (/tr[áa]nsito|embarc|cami[oó]n|carg|nave/i.test(s)) return 'transito';
   if (/produc|fabric/i.test(s)) return 'produccion';
   return 'pendiente';
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4H · PRODUCTIVIDAD ANALYTICS
+// ═══════════════════════════════════════════════
+
+const _prodState = { range: 7, data: null, byTask: new Map() };
+
+const _prodIcons = {
+  PLANOS:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>',
+  LICITACION:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13V7a2 2 0 0 0-2-2h-8.6a2 2 0 0 1-1.6-.8L8.6 2.8A2 2 0 0 0 7 2H4a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h6"/><circle cx="18" cy="18" r="3"/></svg>',
+  COMPRA:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>',
+  INSTALACION: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  PRUEBAS:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 12 11 14 15 10"/><circle cx="12" cy="12" r="9"/></svg>',
+  HITO:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"/></svg>',
+  CIERRE:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+};
+
+// Fetch avance_log + cómputo de velocidad por tarea
+async function prodFetchData() {
+  if (!currentProyecto) { _prodState.data = null; return; }
+  const cod = currentProyecto.cod || currentProyecto.nombre;
+  const sinceIso = new Date(Date.now() - _prodState.range * 86400000).toISOString().slice(0,10);
+  try {
+    const rows = await sbFetch(`/rest/v1/avance_log?cod_proyecto=eq.${encodeURIComponent(cod)}&fecha=gte.${sinceIso}&order=fecha.asc&limit=500`);
+    _prodState.data = rows || [];
+  } catch (e) {
+    _prodState.data = [];
+  }
+}
+
+// Calcula velocidad por tarea (% o cantidad por día)
+function _prodVelByTask() {
+  const byTask = new Map();
+  (_prodState.data || []).forEach(r => {
+    if (!r.tarea_id) return;
+    if (!byTask.has(r.tarea_id)) byTask.set(r.tarea_id, []);
+    byTask.get(r.tarea_id).push(r);
+  });
+
+  const result = new Map();
+  byTask.forEach((logs, taskId) => {
+    if (logs.length < 1) return;
+    const task = (_ganttState.tasks||[]).find(t => t.id === taskId);
+    if (!task) return;
+    const tm = task.tipo_medicion || 'pct_manual';
+    // Ordenar por fecha
+    logs.sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    const first = logs[0], last = logs[logs.length-1];
+    const days = Math.max(1, (new Date(last.fecha) - new Date(first.fecha))/86400000);
+    let vel = 0, unit = '%/d';
+    if (tm === 'cantidad' && task.unidad) {
+      const lastQty = parseFloat(last.cantidad_ejecutada||0);
+      const firstQty = parseFloat(first.cantidad_ejecutada||0);
+      vel = (lastQty - firstQty) / days;
+      unit = (task.unidad || 'und') + '/d';
+    } else {
+      const deltaPct = parseFloat(last.pct_resultante||0) - parseFloat(first.pct_resultante||0);
+      vel = deltaPct / days;
+      unit = '%/d';
+    }
+    // Trend: comparar primera mitad vs segunda mitad
+    let trend = 'flat', trendPct = 0;
+    if (logs.length >= 4) {
+      const mid = Math.floor(logs.length/2);
+      const seg1Days = Math.max(1, (new Date(logs[mid-1].fecha) - new Date(logs[0].fecha))/86400000);
+      const seg2Days = Math.max(1, (new Date(logs[logs.length-1].fecha) - new Date(logs[mid].fecha))/86400000);
+      const seg1Vel = (parseFloat(logs[mid-1].pct_resultante||0) - parseFloat(logs[0].pct_resultante||0)) / seg1Days;
+      const seg2Vel = (parseFloat(logs[logs.length-1].pct_resultante||0) - parseFloat(logs[mid].pct_resultante||0)) / seg2Days;
+      if (seg1Vel > 0) {
+        trendPct = ((seg2Vel - seg1Vel) / seg1Vel) * 100;
+        if (trendPct > 10) trend = 'up';
+        else if (trendPct < -10) trend = 'down';
+      }
+    }
+    result.set(taskId, { task, logs, vel, unit, trend, trendPct, count: logs.length });
+  });
+  _prodState.byTask = result;
+  return result;
+}
+
+// Agrupar productividad por categoría
+function _prodByCategoria(byTask) {
+  const cats = {};
+  byTask.forEach((info, taskId) => {
+    const cat = info.task.categoria || autoDetectCategory(info.task.nombre_tarea, info.task.es_hito);
+    if (!cats[cat]) cats[cat] = { vel:0, count:0, tasks:[], unit:info.unit, trendSum:0, hasTrend:0 };
+    cats[cat].vel += info.vel;
+    cats[cat].count += info.count;
+    cats[cat].tasks.push(info);
+    if (info.trend !== 'flat') {
+      cats[cat].trendSum += info.trendPct;
+      cats[cat].hasTrend++;
+    }
+  });
+  // Promedio por categoría
+  Object.keys(cats).forEach(c => {
+    const d = cats[c];
+    d.velAvg = d.tasks.length ? d.vel / d.tasks.length : 0;
+    d.trendAvg = d.hasTrend ? d.trendSum / d.hasTrend : 0;
+    d.trend = d.trendAvg > 10 ? 'up' : d.trendAvg < -10 ? 'down' : 'flat';
+  });
+  return cats;
+}
+
+// Sparkline de avance acumulado en los últimos N días
+function _prodSparkPoints(logs, days) {
+  if (!logs || !logs.length) return [];
+  // Construir serie diaria: cada día = pct máximo del día
+  const sinceMs = Date.now() - days * 86400000;
+  const byDay = {};
+  logs.forEach(r => {
+    const t = new Date(r.fecha).getTime();
+    if (t < sinceMs) return;
+    const dStr = r.fecha;
+    byDay[dStr] = Math.max(byDay[dStr]||0, parseFloat(r.pct_resultante||0));
+  });
+  return Object.keys(byDay).sort().map(d => byDay[d]);
+}
+
+function renderProductivityPanel() {
+  const body = document.getElementById('prod-body');
+  if (!body) return;
+  const emptyMsg = document.getElementById('pr-empty-msg');
+
+  if (!currentProyecto) {
+    if (emptyMsg) emptyMsg.textContent = '';
+    body.innerHTML = `<div class="prod-empty"><div class="ic">📊</div>Selecciona un proyecto para ver productividad.</div>`;
+    return;
+  }
+  if (!_prodState.data) {
+    body.innerHTML = `<div class="prod-empty"><div class="ic">⏱</div>Cargando…</div>`;
+    return;
+  }
+  if (_prodState.data.length === 0) {
+    if (emptyMsg) emptyMsg.textContent = `${_prodState.range}d sin registros`;
+    body.innerHTML = `<div class="prod-empty"><div class="ic">📈</div>
+      No hay registros de avance en los últimos ${_prodState.range} días.<br>
+      <span style="font-size:10.5px;">Cada vez que actualices avance desde el drill-down de una tarea, aparecerá aquí.</span></div>`;
+    return;
+  }
+
+  const byTask = _prodVelByTask();
+  const byCat = _prodByCategoria(byTask);
+  const cats = Object.entries(byCat)
+    .filter(([_,d]) => d.tasks.length > 0)
+    .sort((a,b) => b[1].count - a[1].count);
+
+  if (emptyMsg) emptyMsg.textContent = `${_prodState.data.length} registros · ${byTask.size} tareas activas`;
+
+  // Cards por categoría
+  const catsHtml = `<div class="prod-grid">${cats.map(([cat,d]) => {
+    const meta = CAT_META[cat] || CAT_META.INSTALACION;
+    const trendIcon = d.trend === 'up'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'
+      : d.trend === 'down'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    // Sparkline aggregado: avance promedio diario
+    const allLogs = d.tasks.flatMap(t => t.logs);
+    const sparkPts = _prodSparkPoints(allLogs, _prodState.range);
+    const sparkColor = d.trend === 'up' ? '#16a34a' : d.trend === 'down' ? '#dc2626' : '#7c3aed';
+    const trendTxt = Math.abs(d.trendAvg) > 0.1 ? `${d.trendAvg>0?'+':''}${d.trendAvg.toFixed(0)}%` : '0%';
+    return `<button type="button" class="prod-card" data-cat="${cat}" onclick="showTab('gantt');setTimeout(()=>setGanttCategoria('${cat}'),200)">
+      <div class="pc-head">
+        <div class="pc-icon">${_prodIcons[cat] || ''}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pc-name">${meta.label}</div>
+          <div class="pc-tit">${d.tasks.length} tarea${d.tasks.length===1?'':'s'} activa${d.tasks.length===1?'':'s'}</div>
+        </div>
+        <span class="pc-trend ${d.trend}">${trendIcon}<span>${trendTxt}</span></span>
+      </div>
+      <div class="pc-velo">${d.velAvg.toFixed(d.velAvg<10?1:0)}<span class="u">${d.tasks[0]?.unit || '%/d'}</span></div>
+      <div class="pc-sub">Velocidad promedio · ${_prodState.range}d</div>
+      <div class="pc-spark">${sparklineSVG(sparkPts, {w:200, h:32, stroke:sparkColor})}</div>
+      <div class="pc-meta">
+        <span><span class="v">${d.count}</span> registros</span>
+        <span>${d.trend === 'up' ? '↑ Acelerando' : d.trend === 'down' ? '↓ Ralentizando' : '→ Estable'}</span>
+      </div>
+    </button>`;
+  }).join('')}</div>`;
+
+  // Top 3 más productivos + Top 3 ralentizando
+  const all = [..._prodState.byTask.values()].filter(d => d.task);
+  const top3 = [...all].sort((a,b) => b.vel - a.vel).slice(0, 3);
+  const bottom3 = [...all].filter(d => d.trend === 'down' || d.vel <= 0).slice(0, 3);
+
+  const renderRank = info => `<div class="prod-rank-row" onclick="abrirTaskPanelById('${info.task.id||''}')">
+    <span class="rank-num"></span>
+    <span class="rank-name">${(info.task.nombre_tarea||'').replace(/</g,'&lt;')}</span>
+    <span class="rank-vel ${info.trend}">${info.vel.toFixed(info.vel<10?1:0)} ${info.unit}</span>
+  </div>`;
+
+  const rankHtml = (top3.length > 0 || bottom3.length > 0) ? `<div class="prod-rank">
+    ${top3.length > 0 ? `<div class="prod-rank-card up">
+      <div class="prod-rank-tit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M9 13a3 3 0 1 0 6 0v-2H9v2z"/><circle cx="12" cy="20" r="2"/></svg>
+        🏆 Top performers
+      </div>
+      <div class="prod-rank-list">${top3.map((info,i) => `<div class="prod-rank-row" onclick="abrirTaskPanelById('${info.task.id||''}')">
+        <span class="rank-num">${i+1}</span>
+        <span class="rank-name">${(info.task.nombre_tarea||'').replace(/</g,'&lt;')}</span>
+        <span class="rank-vel up">${info.vel.toFixed(info.vel<10?1:0)} ${info.unit}</span>
+      </div>`).join('')}</div>
+    </div>` : '<div></div>'}
+    ${bottom3.length > 0 ? `<div class="prod-rank-card down">
+      <div class="prod-rank-tit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
+        Ralentizando · requieren atención
+      </div>
+      <div class="prod-rank-list">${bottom3.map(info => renderRank(info)).join('')}</div>
+    </div>` : '<div></div>'}
+  </div>` : '';
+
+  body.innerHTML = catsHtml + rankHtml;
+}
+
+function prodSetRange(d) {
+  _prodState.range = d;
+  document.querySelectorAll('#pr-range button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.r) === d));
+  prodFetchData().then(renderProductivityPanel);
+}
+
+async function cargarProductividad() {
+  await prodFetchData();
+  renderProductivityPanel();
 }
 
 // Parser de fechas formato PMO "01-ago-25" → Date
