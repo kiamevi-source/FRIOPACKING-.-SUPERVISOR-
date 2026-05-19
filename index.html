@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Centro de Control Supervisor · Friopacking</title>
 <meta name="theme-color" content="#0B1739">
+<link rel="icon" type="image/png" href="assets/logo-mark.png">
+<link rel="apple-touch-icon" href="assets/logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -111,6 +113,20 @@ body{
 }
 .login-logo::before{content:'';width:6px;height:6px;border-radius:50%;
   background:#22d3ee;box-shadow:0 0 8px #22d3ee;}
+.login-logo-img{
+  display:block;height:64px;width:auto;max-width:80%;
+  margin:0 0 22px;
+  filter:drop-shadow(0 6px 18px rgba(34,211,238,.22));
+  animation:logoFloat 6s ease-in-out infinite;
+}
+@keyframes logoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+.login-os-tag{
+  display:inline-block;margin-bottom:18px;
+  font-size:9.5px;font-weight:800;letter-spacing:.16em;color:rgba(255,255,255,.55);
+  text-transform:uppercase;
+  padding:4px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);
+}
 .login-box h2{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-.01em;}
 .login-box p,.login-box .sub{font-size:12.5px;color:rgba(255,255,255,.55);margin-bottom:26px;}
 .form-group{margin-bottom:14px;}
@@ -164,6 +180,28 @@ body{
 }
 .hdr-logo::before{content:'';width:6px;height:6px;border-radius:50%;
   background:#22d3ee;box-shadow:0 0 8px #22d3ee;}
+/* Logo image variant (uses oficial brand PNG) */
+.hdr-logo-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:4px 10px 4px 6px;border-radius:12px;
+  text-decoration:none;color:inherit;cursor:pointer;
+  transition:all var(--d) var(--ease);
+  outline:none;
+}
+.hdr-logo-link:hover{background:rgba(15,23,42,.04);}
+.hdr-logo-link:focus-visible{box-shadow:0 0 0 3px rgba(6,182,212,.25);}
+.hdr-logo-link img{
+  display:block;height:30px;width:auto;
+}
+.hdr-logo-link .live-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,.65);
+  animation:pulseDot 2.4s ease-in-out infinite;
+}
+@media (max-width:560px){
+  .hdr-logo-link img{height:26px;}
+  .hdr-logo-link .live-dot{display:none;}
+}
 .hdr-divider,.hd{width:1px;height:28px;background:var(--border-strong);opacity:.6;}
 .hdr-title-block,.header-titles{flex:0 0 auto;min-width:0;}
 .hdr-tag,.header-tag{font-size:9.5px;font-weight:700;letter-spacing:.12em;
@@ -600,7 +638,8 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 <!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
   <form class="login-box" onsubmit="event.preventDefault(); doLogin();">
-    <div class="login-logo">FRIOPACKING · SUPERVISOR OS</div>
+    <img class="login-logo-img" src="assets/logo-light.png" alt="Grupo Friopacking">
+    <span class="login-os-tag">Supervisor Operating System</span>
     <h2>Centro de Control</h2>
     <p class="sub">Tu cockpit personal de supervisión de obra.</p>
     <div class="form-group">
@@ -622,7 +661,10 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
   <!-- HEADER · Cockpit Topbar -->
   <header class="site-header topbar">
-    <div class="hdr-logo">FRIOPACKING</div>
+    <a class="hdr-logo-link" href="#" onclick="showTab('dashboard');return false;" aria-label="Grupo Friopacking · Inicio">
+      <img src="assets/logo-color.png" alt="Grupo Friopacking">
+      <span class="live-dot" title="Sesión activa"></span>
+    </a>
     <div class="hdr-divider"></div>
     <div class="hdr-title-block header-titles">
       <div class="hdr-tag header-tag">Supervisor Operating System</div>
