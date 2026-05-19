@@ -6036,8 +6036,104 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const panel = document.getElementById('task-panel');
     if (panel && panel.classList.contains('open')) cerrarTaskPanel();
+    const modal = document.getElementById('mp-modal');
+    if (modal && modal.classList.contains('open')) closeImportPreview();
   }
 });
+
+// ═══════════════════════════════════════════════
+// PHASE 4D · MOTION POLISH GLOBAL
+// ═══════════════════════════════════════════════
+
+// ── Ripple effect global ────────────────────────
+// Aplica a cualquier elemento con clase .btn, .gtb-btn, .lyr-toggle, .gst-chip, .mp-bulk, .qa-submit, .btn-login
+const _RIPPLE_SELECTORS = '.btn,.gtb-btn,.lyr-toggle,.gst-chip,.mp-bulk,.qa-submit,.btn-login,.gantt-cat-card,.eq-stat-pill';
+document.addEventListener('click', (e) => {
+  const target = e.target.closest(_RIPPLE_SELECTORS);
+  if (!target) return;
+  // Evitar acumulación de ripples
+  const old = target.querySelector('.ripple');
+  if (old) old.remove();
+  // Posición relativa
+  const rect = target.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 0.6;
+  const x = e.clientX - rect.left - size/2;
+  const y = e.clientY - rect.top - size/2;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;`;
+  // Mantener position:relative + overflow:hidden si no los tiene
+  const cs = getComputedStyle(target);
+  if (cs.position === 'static') target.style.position = 'relative';
+  if (cs.overflow !== 'hidden') target.style.overflow = 'hidden';
+  target.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+}, true);
+
+// ── Compact-on-scroll para Gantt toolbar ──────
+let _toolbarObserver = null;
+function setupToolbarObserver() {
+  const tb = document.querySelector('.gantt-toolbar');
+  if (!tb) return;
+  // Crear sentinel si no existe
+  let sentinel = document.getElementById('gantt-toolbar-sentinel');
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.id = 'gantt-toolbar-sentinel';
+    sentinel.style.cssText = 'height:1px;width:100%;';
+    tb.parentNode.insertBefore(sentinel, tb);
+  }
+  if (_toolbarObserver) _toolbarObserver.disconnect();
+  _toolbarObserver = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      tb.classList.toggle('compact', !en.isIntersecting);
+    });
+  }, { root: null, threshold: 0, rootMargin: '-64px 0px 0px 0px' });
+  _toolbarObserver.observe(sentinel);
+}
+// Reactivar al mostrar tab Gantt
+const _origShowTab = window.showTab;
+if (typeof _origShowTab === 'function') {
+  window.showTab = function(tab) {
+    _origShowTab(tab);
+    if (tab === 'gantt') setTimeout(setupToolbarObserver, 100);
+  };
+}
+
+// ── Row stagger animation: añadir .row-fresh con delay incremental ──
+function staggerRows(containerSel, rowSel) {
+  const rows = document.querySelectorAll(`${containerSel} ${rowSel}`);
+  rows.forEach((r, i) => {
+    r.style.animationDelay = (Math.min(i, 12) * 30) + 'ms';
+    r.classList.add('row-fresh');
+    setTimeout(() => r.classList.remove('row-fresh'), 600 + i*30);
+  });
+}
+
+// Wrap renderGanttBoard to apply stagger after each render
+const _origRenderBoard = renderGanttBoard;
+renderGanttBoard = function() {
+  _origRenderBoard.apply(this, arguments);
+  // Stagger sobre las primeras filas visibles
+  staggerRows('#gantt-board .list-col', '.gantt-row');
+  // Re-setup observer del toolbar (sticky)
+  setupToolbarObserver();
+};
+
+// ── Smooth sub-tab transition mejorada ────────
+const _origSetCategoria = setGanttCategoria;
+setGanttCategoria = function(cat) {
+  const board = document.getElementById('gantt-board');
+  const subtabs = document.getElementById('gantt-subtabs');
+  if (board) board.classList.add('fading');
+  // Animación slight slide en sub-tabs
+  if (subtabs) {
+    subtabs.style.transition = 'transform 200ms var(--ease-out)';
+    subtabs.style.transform = 'translateX(2px)';
+    setTimeout(() => { subtabs.style.transform = ''; }, 220);
+  }
+  setTimeout(() => { _origSetCategoria(cat); }, 80);
+};
 
 function updateGanttStats(all) {
   const hoy = new Date().toISOString().slice(0,10);
@@ -6046,17 +6142,41 @@ function updateGanttStats(all) {
   const criticas  = all.filter(t => t.es_critico).length;
   const hitos     = all.filter(t => t.es_hito).length;
   const done      = all.filter(t => parseFloat(t.pct_avance||0) >= 100).length;
-  const set = (id, n, lbl, alwaysShow) => {
+
+  // Sparkline = histograma de distribución de % avance (5 buckets)
+  const buckets = [0,0,0,0,0];
+  all.forEach(t => {
+    const p = parseFloat(t.pct_avance||0);
+    const i = Math.min(4, Math.floor(p/20));
+    buckets[i]++;
+  });
+  // Sparkline para atrasadas: días de retraso distribución
+  const lateDist = [0,0,0,0,0];
+  all.forEach(t => {
+    const p = parseFloat(t.pct_avance||0);
+    if (p >= 100 || !t.fecha_fin_base || t.fecha_fin_base >= hoy) return;
+    const diff = Math.floor((new Date(hoy) - new Date(t.fecha_fin_base))/86400000);
+    const i = Math.min(4, Math.floor(diff/7));
+    lateDist[i]++;
+  });
+
+  const setLive = (id, n, lbl, cls, spark, onclickFilter, alwaysShow) => {
     const el = document.getElementById(id); if (!el) return;
     if (!alwaysShow && n === 0) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
-    el.innerHTML = `<span class="num">${n}</span> ${lbl}`;
+    el.className = `gtb-stat-live ${cls||''}` + (n>0?'':' hidden');
+    if (onclickFilter) el.onclick = () => setGanttFilter(onclickFilter);
+    el.title = `Click para filtrar: ${lbl}`;
+    const sparkColor = cls === 'danger' ? '#dc2626' : cls === 'warn' ? '#d97706' : cls === 'good' ? '#16a34a' : '#0891B2';
+    const sparkSvg = sparklineSVG(spark||[], { w:36, h:14, stroke:sparkColor });
+    el.innerHTML = `<span class="lv-num">${n}</span> <span style="font-weight:600">${lbl}</span> <span class="lv-spark">${sparkSvg}</span>`;
   };
-  set('gst-total', total, 'tareas', true);
-  set('gst-late', atrasadas, 'atrasadas');
-  set('gst-crit', criticas, 'críticas');
-  set('gst-hito', hitos, 'hitos');
-  set('gst-done', done, '✓ completas');
+
+  setLive('gst-total', total, 'tareas', '', buckets, 'all', true);
+  setLive('gst-late', atrasadas, 'atrasadas', 'danger', lateDist, 'atrasado');
+  setLive('gst-crit', criticas, 'críticas', 'warn', null, 'critico');
+  setLive('gst-hito', hitos, 'hitos', '', null, 'hito');
+  setLive('gst-done', done, '✓ completas', 'good', null, null);
 }
 
 // ═══════════════════════════════════════════════
