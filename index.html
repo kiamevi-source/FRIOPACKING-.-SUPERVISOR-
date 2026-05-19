@@ -608,6 +608,312 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
   border:1px solid var(--border-strong);border-radius:6px;
   font-size:12px;text-align:center;font-family:inherit;}
 
+/* ════════════════════════════════════════════
+   PHASE 2 · COCKPIT DASHBOARD
+   ════════════════════════════════════════════ */
+
+/* ── AI BRIEFING HERO ── */
+.ai-briefing{
+  position:relative;
+  background:linear-gradient(135deg,#1B2D5B 0%,#243770 30%,#0E7490 70%,#06b6d4 100%);
+  border-radius:var(--r-lg);
+  padding:24px 28px;margin-bottom:22px;
+  color:#fff;overflow:hidden;
+  box-shadow:0 24px 60px rgba(11,23,57,.30),inset 0 1px 0 rgba(255,255,255,.10);
+}
+.ai-briefing::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(circle 320px at 110% -10%,rgba(124,58,237,.50),transparent 55%),
+    radial-gradient(circle 280px at -10% 110%,rgba(34,211,238,.45),transparent 55%);
+}
+.ai-briefing > *{position:relative;z-index:1;}
+.ai-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.ai-avatar{
+  width:38px;height:38px;border-radius:12px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);
+  box-shadow:0 8px 22px rgba(124,58,237,.40),inset 0 1px 0 rgba(255,255,255,.30);
+  position:relative;
+}
+.ai-avatar::after{
+  content:'';position:absolute;inset:-4px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.18);
+  animation:ringPulse 2.6s ease-in-out infinite;
+}
+@keyframes ringPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.08);}}
+.ai-avatar svg{width:18px;height:18px;color:#fff;}
+.ai-meta{flex:1;min-width:0;}
+.ai-tag{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);}
+.ai-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em;margin-top:1px;}
+.ai-refresh{
+  display:inline-flex;align-items:center;gap:6px;
+  height:30px;padding:0 12px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;
+  color:rgba(255,255,255,.85);font-size:11px;font-weight:700;
+  cursor:pointer;transition:all var(--d) var(--ease);
+}
+.ai-refresh:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+.ai-refresh.spinning svg{animation:spin 1s linear infinite;}
+.ai-refresh svg{width:14px;height:14px;}
+
+.ai-body{font-size:14.5px;line-height:1.65;color:rgba(255,255,255,.92);font-weight:500;}
+.ai-body strong{color:#fff;font-weight:800;}
+.ai-body em{font-style:normal;background:linear-gradient(120deg,#22d3ee,#a78bfa);
+  -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;}
+
+.ai-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:18px;}
+.ai-insight{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  transition:all var(--d) var(--ease);
+  animation:insightIn .5s var(--ease-out) both;
+}
+.ai-insight:hover{background:rgba(255,255,255,.12);transform:translateY(-2px);}
+.ai-insight:nth-child(1){animation-delay:.0s;}
+.ai-insight:nth-child(2){animation-delay:.08s;}
+.ai-insight:nth-child(3){animation-delay:.16s;}
+.ai-insight:nth-child(4){animation-delay:.24s;}
+@keyframes insightIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.ai-insight .ic-wrap{
+  width:28px;height:28px;border-radius:8px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.10);
+}
+.ai-insight.tone-danger  .ic-wrap{background:rgba(239,68,68,.20);color:#fecaca;}
+.ai-insight.tone-warn    .ic-wrap{background:rgba(245,158,11,.20);color:#fde68a;}
+.ai-insight.tone-success .ic-wrap{background:rgba(34,197,94,.20);color:#bbf7d0;}
+.ai-insight.tone-info    .ic-wrap{background:rgba(34,211,238,.20);color:#a5f3fc;}
+.ai-insight .ic-wrap svg{width:14px;height:14px;}
+.ai-insight .txt{flex:1;font-size:12px;color:rgba(255,255,255,.88);line-height:1.45;}
+.ai-insight .txt b{display:block;color:#fff;font-weight:800;font-size:12.5px;margin-bottom:1px;}
+
+.ai-skeleton{display:flex;gap:8px;align-items:center;}
+.ai-skeleton .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 75%);background-size:200% 100%;}
+
+/* ── KPI CARDS (advanced) ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+.kpi{
+  position:relative;
+  background:var(--glass-strong);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  padding:16px 18px 14px;
+  box-shadow:var(--sh-2);
+  transition:all var(--d) var(--ease);overflow:hidden;
+  display:flex;flex-direction:column;gap:6px;min-height:128px;
+}
+.kpi::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--teal-500),var(--brand-600));
+}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--sh-3);border-color:var(--border-strong);}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.kpi-icon{
+  width:30px;height:30px;border-radius:9px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,rgba(6,182,212,.10),rgba(46,125,209,.10));
+  color:var(--teal-700);
+}
+.kpi-icon svg{width:15px;height:15px;}
+.kpi-name{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);}
+.kpi-trend{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;
+  padding:3px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--text-2);
+}
+.kpi-trend svg{width:10px;height:10px;}
+.kpi-trend.up   {background:var(--success-bg);color:#166534;}
+.kpi-trend.down {background:var(--danger-bg);color:#991b1b;}
+.kpi-trend.flat {background:var(--surface-2);color:var(--text-2);}
+
+.kpi-value{font-size:30px;font-weight:900;color:var(--navy-800);letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;}
+.kpi-unit{font-size:13px;font-weight:700;color:var(--text-3);margin-left:2px;}
+.kpi-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:auto;}
+.kpi-sub2{font-size:11px;color:var(--text-3);line-height:1.3;}
+.kpi-spark{flex:0 0 64px;height:24px;}
+.kpi-spark svg{width:100%;height:100%;overflow:visible;}
+
+.kpi.good::before{background:linear-gradient(180deg,var(--success-2),var(--success));}
+.kpi.good .kpi-value{color:var(--success);}
+.kpi.good .kpi-icon{background:linear-gradient(135deg,rgba(22,163,74,.12),rgba(34,197,94,.10));color:#166534;}
+.kpi.warn::before{background:linear-gradient(180deg,var(--warning-2),var(--warning));}
+.kpi.warn .kpi-value{color:var(--warning);}
+.kpi.warn .kpi-icon{background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(217,119,6,.10));color:#92400e;}
+.kpi.bad::before{background:linear-gradient(180deg,var(--danger-2),var(--danger));}
+.kpi.bad .kpi-value{color:var(--danger);}
+.kpi.bad .kpi-icon{background:linear-gradient(135deg,rgba(239,68,68,.14),rgba(220,38,38,.10));color:#991b1b;}
+.kpi.bad{box-shadow:var(--sh-2),0 0 0 1px rgba(220,38,38,.12);}
+.kpi.bad::after{content:'';position:absolute;inset:0;border-radius:var(--r-md);
+  background:radial-gradient(circle at 100% 0%,rgba(220,38,38,.06),transparent 60%);pointer-events:none;}
+
+/* ── COCKPIT GRID 2-COL ── */
+.cockpit-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media (max-width:980px){ .cockpit-grid{grid-template-columns:1fr;} }
+
+/* ── PRIORITY CENTER ── */
+.prio-list{display:flex;flex-direction:column;gap:10px;}
+.prio-item{
+  position:relative;display:flex;align-items:stretch;gap:12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.6);
+  border:1px solid var(--border);border-radius:12px;
+  transition:all var(--d) var(--ease);
+  cursor:pointer;text-align:left;width:100%;font-family:inherit;color:inherit;
+  animation:prioIn .4s var(--ease-out) both;
+}
+.prio-item:hover{transform:translateX(2px);background:#fff;box-shadow:var(--sh-2);border-color:var(--border-strong);}
+@keyframes prioIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+.prio-item:nth-child(1){animation-delay:.0s;}
+.prio-item:nth-child(2){animation-delay:.06s;}
+.prio-item:nth-child(3){animation-delay:.12s;}
+.prio-item:nth-child(4){animation-delay:.18s;}
+.prio-bar{width:4px;border-radius:4px;flex-shrink:0;background:var(--text-3);}
+.prio-item.imp-crit .prio-bar{background:linear-gradient(180deg,var(--danger-2),var(--danger));box-shadow:0 0 8px rgba(220,38,38,.45);}
+.prio-item.imp-high .prio-bar{background:linear-gradient(180deg,var(--warning-2),var(--warning));}
+.prio-item.imp-mid  .prio-bar{background:linear-gradient(180deg,var(--teal-400),var(--teal-600));}
+.prio-item.imp-low  .prio-bar{background:linear-gradient(180deg,var(--text-3),var(--text-2));}
+
+.prio-icon{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:var(--surface-2);color:var(--text-2);
+}
+.prio-item.imp-crit .prio-icon{background:var(--danger-bg);color:#991b1b;animation:pulseSoft 1.4s ease-in-out infinite;}
+.prio-item.imp-high .prio-icon{background:var(--warning-bg);color:#92400e;}
+.prio-item.imp-mid  .prio-icon{background:rgba(6,182,212,.10);color:var(--teal-700);}
+@keyframes pulseSoft{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4);}50%{box-shadow:0 0 0 6px transparent;}}
+.prio-icon svg{width:16px;height:16px;}
+
+.prio-text{flex:1;min-width:0;}
+.prio-title{font-size:13px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;}
+.prio-desc{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.4;}
+.prio-cta{
+  align-self:center;flex-shrink:0;
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-3);display:inline-flex;align-items:center;gap:4px;
+}
+.prio-item:hover .prio-cta{color:var(--teal-700);}
+.prio-cta svg{width:12px;height:12px;}
+.prio-empty{
+  text-align:center;padding:32px 16px;
+  font-size:12.5px;color:var(--text-3);
+}
+.prio-empty .check-wrap{
+  width:48px;height:48px;border-radius:50%;
+  background:var(--success-bg);color:var(--success);
+  display:grid;place-items:center;margin:0 auto 10px;
+  animation:bounceIn .5s var(--ease-out);
+}
+@keyframes bounceIn{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+.prio-empty .check-wrap svg{width:24px;height:24px;}
+
+/* ── TIMELINE OPERATIVO DEL DÍA ── */
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{
+  content:'';position:absolute;left:11px;top:6px;bottom:6px;width:2px;
+  background:linear-gradient(180deg,var(--teal-500),var(--brand-600),var(--violet-500));
+  border-radius:2px;opacity:.30;
+}
+.tl-event{position:relative;margin-bottom:12px;animation:tlIn .35s var(--ease-out) both;}
+.tl-event:nth-child(1){animation-delay:.0s;}
+.tl-event:nth-child(2){animation-delay:.05s;}
+.tl-event:nth-child(3){animation-delay:.10s;}
+.tl-event:nth-child(4){animation-delay:.15s;}
+.tl-event:nth-child(5){animation-delay:.20s;}
+.tl-event:nth-child(6){animation-delay:.25s;}
+@keyframes tlIn{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:none;}}
+.tl-dot{
+  position:absolute;left:-22px;top:4px;
+  width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid var(--teal-500);
+  box-shadow:0 0 0 3px rgba(6,182,212,.12);
+}
+.tl-event.tone-danger  .tl-dot{border-color:var(--danger); box-shadow:0 0 0 3px rgba(220,38,38,.14);}
+.tl-event.tone-warn    .tl-dot{border-color:var(--warning);box-shadow:0 0 0 3px rgba(217,119,6,.14);}
+.tl-event.tone-success .tl-dot{border-color:var(--success);box-shadow:0 0 0 3px rgba(22,163,74,.14);}
+.tl-event.tone-violet  .tl-dot{border-color:var(--violet-500);box-shadow:0 0 0 3px rgba(124,58,237,.14);}
+.tl-event.now .tl-dot{
+  background:var(--teal-500);border-color:#fff;
+  box-shadow:0 0 0 3px rgba(6,182,212,.30),0 0 12px rgba(6,182,212,.50);
+  animation:nowPulse 1.4s ease-in-out infinite;
+}
+@keyframes nowPulse{0%,100%{box-shadow:0 0 0 3px rgba(6,182,212,.30),0 0 12px rgba(6,182,212,.50);}
+50%{box-shadow:0 0 0 6px rgba(6,182,212,.10),0 0 18px rgba(6,182,212,.65);}}
+.tl-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+.tl-time{font-size:10.5px;font-weight:800;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:.04em;min-width:38px;}
+.tl-chip{
+  display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;
+  padding:2px 7px;border-radius:999px;text-transform:uppercase;
+  background:var(--surface-2);color:var(--text-2);
+}
+.tl-event.tone-danger  .tl-chip{background:var(--danger-bg);color:#991b1b;}
+.tl-event.tone-warn    .tl-chip{background:var(--warning-bg);color:#92400e;}
+.tl-event.tone-success .tl-chip{background:var(--success-bg);color:#166534;}
+.tl-event.tone-violet  .tl-chip{background:rgba(124,58,237,.10);color:var(--violet-600);}
+.tl-title{font-size:12.5px;color:var(--text);line-height:1.45;}
+.tl-title b{font-weight:700;color:var(--navy-800);}
+.tl-empty{
+  text-align:center;padding:24px;color:var(--text-3);font-size:12px;
+}
+
+/* ── FEED OPERATIVO ── */
+.feed{display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto;padding-right:4px;}
+.feed::-webkit-scrollbar{width:6px;}
+.feed::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+.feed-event{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 10px;border-radius:10px;
+  background:rgba(255,255,255,.4);
+  border:1px solid transparent;
+  transition:all var(--d) var(--ease);
+  animation:feedIn .35s var(--ease-out) both;
+}
+.feed-event:hover{background:#fff;border-color:var(--border);box-shadow:var(--sh-1);}
+@keyframes feedIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.feed-time{
+  font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--text-3);min-width:48px;letter-spacing:.04em;
+  padding-top:1px;
+}
+.feed-pulse{
+  width:8px;height:8px;border-radius:50%;background:var(--teal-500);flex-shrink:0;margin-top:5px;
+  box-shadow:0 0 0 0 var(--teal-500);
+}
+.feed-event.kind-riesgo  .feed-pulse{background:var(--danger);}
+.feed-event.kind-reporte .feed-pulse{background:var(--success);}
+.feed-event.kind-personal .feed-pulse{background:var(--brand-500);}
+.feed-event.kind-contrata .feed-pulse{background:var(--violet-500);}
+.feed-event.kind-gantt    .feed-pulse{background:var(--warning);}
+.feed-event:first-child .feed-pulse{animation:feedPulse 1.6s ease-in-out infinite;}
+@keyframes feedPulse{0%,100%{box-shadow:0 0 0 0 currentColor;}50%{box-shadow:0 0 0 6px transparent;}}
+.feed-msg{flex:1;font-size:12px;color:var(--text);line-height:1.42;min-width:0;}
+.feed-msg b{font-weight:700;color:var(--navy-800);}
+.feed-msg .feed-tag{
+  display:inline-block;font-size:9px;font-weight:800;letter-spacing:.04em;
+  padding:1px 6px;border-radius:999px;
+  background:var(--surface-2);color:var(--text-2);margin-right:6px;text-transform:uppercase;
+}
+.feed-event.kind-riesgo  .feed-tag{background:var(--danger-bg);color:#991b1b;}
+.feed-event.kind-reporte .feed-tag{background:var(--success-bg);color:#166534;}
+.feed-event.kind-personal .feed-tag{background:rgba(46,125,209,.10);color:var(--brand-700);}
+.feed-event.kind-contrata .feed-tag{background:rgba(124,58,237,.10);color:var(--violet-600);}
+.feed-event.kind-gantt    .feed-tag{background:var(--warning-bg);color:#92400e;}
+
+/* ── CURVA S header chips ── */
+.curva-chip-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--text-2);flex-wrap:wrap;}
+.curva-chip{display:inline-flex;align-items:center;gap:6px;font-weight:700;}
+.curva-chip .swatch{width:14px;height:3px;border-radius:2px;display:inline-block;}
+.curva-chip .swatch.plan{background:var(--text-3);background-image:linear-gradient(90deg,var(--text-3) 50%,transparent 50%);background-size:6px 100%;}
+.curva-chip .swatch.real{background:linear-gradient(90deg,var(--teal-500),var(--brand-500));}
+
 /* ── RESPONSIVE ── */
 @media (max-width:1100px){
   .hdr-pill[id="hdr-clock"]{display:none;}
@@ -753,35 +1059,100 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
   <div class="main-wrap">
 
-    <!-- ══ DASHBOARD ══ -->
+    <!-- ══ DASHBOARD · COCKPIT ══ -->
     <div class="tab-content active" id="tab-dashboard">
-      <div class="kpi-row" id="kpi-row">
-        <div class="kpi-card"><div class="kpi-label">Avance real</div><div class="kpi-val" id="kpi-avance">—</div><div class="kpi-sub">% físico</div></div>
-        <div class="kpi-card"><div class="kpi-label">Plan acum.</div><div class="kpi-val" id="kpi-plan">—</div><div class="kpi-sub">% planificado</div></div>
-        <div class="kpi-card"><div class="kpi-label">SPI</div><div class="kpi-val" id="kpi-spi">—</div><div class="kpi-sub">Schedule Performance</div></div>
-        <div class="kpi-card"><div class="kpi-label">Eval. contratas</div><div class="kpi-val" id="kpi-eval">—</div><div class="kpi-sub">Promedio hoy</div></div>
-        <div class="kpi-card"><div class="kpi-label">Rondas</div><div class="kpi-val" id="kpi-rondas">—</div><div class="kpi-sub">completadas hoy</div></div>
-        <div class="kpi-card"><div class="kpi-label">Personal hoy</div><div class="kpi-val" id="kpi-personal">—</div><div class="kpi-sub">personas en obra</div></div>
-      </div>
 
-      <!-- CURVA S -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <span class="sec-title">Curva S — Avance físico acumulado</span>
-          <span id="dash-status-badge" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:10px;background:#dcfce7;color:#166534;">EN PLAN</span>
+      <!-- ─── AI BRIEFING HERO ─── -->
+      <section class="ai-briefing" id="ai-briefing">
+        <div class="ai-head">
+          <div class="ai-avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v6m0 8v6M2 12h6m8 0h6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/>
+            </svg>
+          </div>
+          <div class="ai-meta">
+            <div class="ai-tag">AI Briefing · Inteligencia Operacional</div>
+            <div class="ai-title" id="ai-greeting">Bienvenido al cockpit</div>
+          </div>
+          <button class="ai-refresh" id="ai-refresh-btn" onclick="regenerarBriefing(true)" title="Regenerar briefing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span>Refrescar</span>
+          </button>
         </div>
-        <div class="sec-body">
-          <div class="curva-wrap"><canvas id="curva-canvas" class="curva-canvas"></canvas></div>
-          <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--muted);">
-            <span>— Plan</span><span style="color:var(--teal2)">— Real</span>
+        <div class="ai-body" id="ai-body">
+          <div class="ai-skeleton">
+            <span style="opacity:.7">Selecciona un proyecto para activar el briefing inteligente del día.</span>
           </div>
         </div>
-      </div>
+        <div class="ai-insights" id="ai-insights"></div>
+      </section>
 
-      <!-- ÚLTIMOS REPORTES -->
+      <!-- ─── KPIs VIVOS (renderizados dinámicamente) ─── -->
+      <section class="kpi-grid" id="kpi-grid">
+        <!-- placeholders mientras carga; cargarDashboard reemplaza el contenido -->
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">Avance real</span></div><div class="kpi-value"><span id="kpi-avance">—</span><span class="kpi-unit">%</span></div><div class="kpi-foot"><span class="kpi-sub2">% físico</span><span class="kpi-spark"></span></div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">Plan acum.</span></div><div class="kpi-value"><span id="kpi-plan">—</span><span class="kpi-unit">%</span></div><div class="kpi-foot"><span class="kpi-sub2">% planificado</span><span class="kpi-spark"></span></div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">SPI</span></div><div class="kpi-value"><span id="kpi-spi">—</span></div><div class="kpi-foot"><span class="kpi-sub2">Schedule Performance</span><span class="kpi-spark"></span></div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">Eval. contratas</span></div><div class="kpi-value"><span id="kpi-eval">—</span></div><div class="kpi-foot"><span class="kpi-sub2">Promedio hoy</span><span class="kpi-spark"></span></div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">Rondas</span></div><div class="kpi-value"><span id="kpi-rondas">—</span></div><div class="kpi-foot"><span class="kpi-sub2">completadas hoy</span><span class="kpi-spark"></span></div></div>
+        <div class="kpi"><div class="kpi-top"><div class="kpi-icon"></div><span class="kpi-name">Personal hoy</span></div><div class="kpi-value"><span id="kpi-personal">—</span></div><div class="kpi-foot"><span class="kpi-sub2">personas en obra</span><span class="kpi-spark"></span></div></div>
+      </section>
+
+      <!-- ─── PRIORIDADES + TIMELINE OPERATIVO ─── -->
+      <section class="cockpit-grid">
+        <div class="sec-card">
+          <div class="sec-head">
+            <span class="sec-title">Lo que necesita tu atención</span>
+            <span class="hdr-pill hlth-idle" id="prio-count-pill" style="height:26px;padding:0 10px;font-size:10.5px;"><span class="hlth-dot"></span><span id="prio-count-lbl">—</span></span>
+          </div>
+          <div class="sec-body">
+            <div id="prio-list"><div class="loading"><span class="spinner"></span>Analizando proyecto…</div></div>
+          </div>
+        </div>
+        <div class="sec-card">
+          <div class="sec-head">
+            <span class="sec-title">Jornada operativa · hoy</span>
+            <span class="hdr-pill" id="tl-date-pill" style="height:26px;padding:0 10px;font-size:10.5px;">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="tl-date">—</span>
+            </span>
+          </div>
+          <div class="sec-body">
+            <div id="timeline"><div class="loading"><span class="spinner"></span>Cargando eventos…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── CURVA S + FEED ─── -->
+      <section class="cockpit-grid">
+        <div class="sec-card">
+          <div class="sec-head">
+            <span class="sec-title">Curva S · Avance físico acumulado</span>
+            <span class="proj-badge estado-activo" id="dash-status-badge">EN PLAN</span>
+          </div>
+          <div class="sec-body">
+            <div class="curva-wrap"><canvas id="curva-canvas" class="curva-canvas"></canvas></div>
+            <div class="curva-chip-row">
+              <span class="curva-chip"><span class="swatch plan"></span>Plan acumulado</span>
+              <span class="curva-chip"><span class="swatch real"></span>Real acumulado</span>
+            </div>
+          </div>
+        </div>
+        <div class="sec-card">
+          <div class="sec-head">
+            <span class="sec-title">Feed operativo</span>
+            <span class="hdr-pill hlth-good" title="Stream activo" style="height:26px;padding:0 10px;font-size:10.5px;"><span class="hlth-dot"></span><span>Live</span></span>
+          </div>
+          <div class="sec-body">
+            <div class="feed" id="feed"><div class="loading"><span class="spinner"></span>Cargando feed…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── HISTORIAL DE REPORTES ─── -->
       <div class="sec-card">
         <div class="sec-head"><span class="sec-title">Historial de reportes</span></div>
-        <div class="sec-body">
+        <div class="sec-body" style="padding:0;">
           <div id="tabla-reportes-hist"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
@@ -1324,129 +1695,264 @@ async function cargarProyecto() {
 // ═══════════════════════════════════════════════
 async function cargarDashboard() {
   if (!currentProyecto) return;
+  const cod = currentProyecto.cod || currentProyecto.nombre;
+  const nombre = currentProyecto.nombre;
+
   try {
-    const cod = currentProyecto.cod || currentProyecto.nombre;
-    // Últimos reportes
-    const reportes = await sbFetch(`/rest/v1/reportes?or=(cod_proyecto.eq.${encodeURIComponent(cod)},nombre_proyecto.ilike.${encodeURIComponent('%'+currentProyecto.nombre+'%')})&order=fecha_reporte.desc&limit=30`);
+    // ── Carga paralela de todas las fuentes ──
+    const [reportes, riesgosTbl, contratasTbl, personalTbl, ganttTbl] = await Promise.all([
+      sbFetch(`/rest/v1/reportes?or=(cod_proyecto.eq.${encodeURIComponent(cod)},nombre_proyecto.ilike.${encodeURIComponent('%'+nombre+'%')})&order=fecha_reporte.desc&limit=30`).catch(()=>[]),
+      sbFetch(`/rest/v1/riesgos?cod_proyecto=eq.${encodeURIComponent(cod)}&order=created_at.desc&limit=30`).catch(()=>[]),
+      sbFetch(`/rest/v1/evaluacion_contratistas?supervisor=ilike.${encodeURIComponent('%'+(currentProyecto.supervisor||'').split(' ')[0]+'%')}&order=created_at.desc&limit=20`).catch(()=>[]),
+      sbFetch(`/rest/v1/ingreso_personal?or=(proyecto.ilike.${encodeURIComponent('%'+nombre+'%')},cod_proyecto_fk.eq.${encodeURIComponent(cod)})&order=fecha.desc&limit=14`).catch(()=>[]),
+      sbFetch(`/rest/v1/tareas_gantt?cod_proyecto=eq.${encodeURIComponent(cod)}&order=fecha_fin_base.asc&limit=200`).catch(()=>[])
+    ]);
 
-    if (reportes && reportes.length > 0) {
-      const ultimo = reportes[0];
-      const avance = parseFloat(ultimo.pct_ejecutado) || 0;
-      const plan   = parseFloat(ultimo.pct_planificado) || 0;
-      const spi    = parseFloat(ultimo.spi) || (plan > 0 ? avance/plan : 0);
+    _dashSources = { reportes: reportes||[], riesgos: riesgosTbl||[], contratas: contratasTbl||[], personal: personalTbl||[], gantt: ganttTbl||[] };
 
-      document.getElementById('kpi-avance').textContent = avance.toFixed(1) + '%';
-      document.getElementById('kpi-plan').textContent   = plan.toFixed(1) + '%';
-      document.getElementById('kpi-spi').textContent    = spi.toFixed(2);
-      document.getElementById('kpi-rondas').textContent = (ultimo.rondas_ok||0) + '/' + (ultimo.rondas_total||10);
-      document.getElementById('kpi-personal').textContent = ultimo.personal_total || '—';
-
-      // Eval contratas
-      if (ultimo.contratas_detalle && Array.isArray(ultimo.contratas_detalle)) {
-        const proms = ultimo.contratas_detalle.map(c => parseFloat(c.eval_promedio||c.promedio||0)).filter(v=>v>0);
-        const avg = proms.length ? (proms.reduce((a,b)=>a+b,0)/proms.length).toFixed(1) : '—';
-        document.getElementById('kpi-eval').textContent = avg;
-      }
-
-      // Status
-      const delta = avance - plan;
-      const statusBadge = document.getElementById('dash-status-badge');
-      if (delta >= -2) {
-        statusBadge.textContent = 'EN PLAN'; statusBadge.style.background='#dcfce7'; statusBadge.style.color='#166534';
-      } else {
-        statusBadge.textContent = 'ATRASADO'; statusBadge.style.background='#fee2e2'; statusBadge.style.color='#991b1b';
-      }
-
-      // SPI color
-      const spiEl = document.getElementById('kpi-spi');
-      spiEl.parentElement.className = 'kpi-card ' + (spi >= 0.96 ? 'green' : spi >= 0.85 ? 'amber' : 'red');
-
-      // ── Project Health en topbar ──
-      if (spi >= 0.96 && delta >= -2) {
-        setProjectHealth('good','En plan · SPI '+spi.toFixed(2));
-      } else if (spi >= 0.85) {
-        setProjectHealth('warn','Atención · SPI '+spi.toFixed(2));
-      } else {
-        setProjectHealth('bad','Crítico · SPI '+spi.toFixed(2));
-      }
-
-      // Curva S
-      dibujarCurvaS(reportes);
-
-      // Tabla historial
-      renderTablaReportes(reportes.slice(0,10));
-
-      // ── Badge Reporte Diario: días sin reporte ──
-      const hoy = new Date().toISOString().slice(0,10);
-      if (ultimo.fecha_reporte && ultimo.fecha_reporte < hoy) {
-        const diff = Math.floor((new Date(hoy) - new Date(ultimo.fecha_reporte))/86400000);
-        if (diff >= 1) setBadgeFromData('diario', diff > 1 ? diff+'d' : '1', 'warn');
-        else setBadgeFromData('diario', 0);
-      } else {
-        setBadgeFromData('diario', 0);
-      }
-    } else {
+    // ── Sin reportes: estado idle ──
+    if (!reportes || reportes.length === 0) {
       setProjectHealth('idle','Sin reportes aún');
+      _dashCtx = { supervisor: firstName(currentUser), proyectoNombre: nombre, prioritiesCount: 0,
+        spi:null, avance:0, plan:0, deltaAvance:null, riesgosAltos:0, contratasBajas:0, ganttAtrasadas:0,
+        diasSinReporte:0, rondasOk:0, rondasTot:10, rondasPct:null };
+      poblarBriefing();
+      renderPrioridades(_dashCtx);
+      renderTimeline(_dashCtx, _dashSources);
+      renderFeed(_dashSources);
+      renderTablaReportes([]);
+      dibujarCurvaS([]);
+      return;
     }
+
+    // ── Métricas del último reporte ──
+    const ultimo = reportes[0];
+    const avance = parseFloat(ultimo.pct_ejecutado) || 0;
+    const plan   = parseFloat(ultimo.pct_planificado) || 0;
+    const spi    = parseFloat(ultimo.spi) || (plan > 0 ? avance/plan : 0);
+    const rondasOk = parseInt(ultimo.rondas_ok)||0;
+    const rondasTot = parseInt(ultimo.rondas_total)||10;
+    const rondasPct = rondasTot ? (rondasOk/rondasTot)*100 : 0;
+    const personal = parseInt(ultimo.personal_total) || 0;
+    const delta = avance - plan;
+
+    // ── Eval. contratas promedio (del último reporte si tiene, sino global recientes) ──
+    let evalCt = 0;
+    if (ultimo.contratas_detalle && Array.isArray(ultimo.contratas_detalle) && ultimo.contratas_detalle.length) {
+      const proms = ultimo.contratas_detalle.map(c => parseFloat(c.eval_promedio||c.promedio||0)).filter(v=>v>0);
+      if (proms.length) evalCt = proms.reduce((a,b)=>a+b,0)/proms.length;
+    }
+    if (!evalCt && (contratasTbl||[]).length) {
+      const recent = (contratasTbl||[]).slice(0,5).map(c=>parseFloat(c.puntaje_final||0)).filter(v=>v>0);
+      if (recent.length) evalCt = recent.reduce((a,b)=>a+b,0)/recent.length;
+    }
+
+    // ── Reporte anterior para deltas ──
+    const prev = reportes[1] || null;
+    const deltaAvance = prev ? (avance - parseFloat(prev.pct_ejecutado||0)) : null;
+    const deltaPlan   = prev ? (plan   - parseFloat(prev.pct_planificado||0)) : null;
+    const deltaSpi    = prev ? (spi    - (parseFloat(prev.spi||0) || (parseFloat(prev.pct_planificado||0)>0 ? parseFloat(prev.pct_ejecutado||0)/parseFloat(prev.pct_planificado||0) : 0))) : null;
+    const deltaRondas = prev ? (rondasPct - ((parseInt(prev.rondas_ok)||0)/(parseInt(prev.rondas_total)||10))*100) : null;
+    const deltaPersonal = prev ? (personal - (parseInt(prev.personal_total)||0)) : null;
+    const deltaEval = null; // sin histórico fácil; queda para refinar
+
+    // ── Sparklines (asc en el tiempo) ──
+    const histAsc = [...reportes].slice(0,10).reverse();
+    const sparkAvance = histAsc.map(r => parseFloat(r.pct_ejecutado)||0);
+    const sparkPlan   = histAsc.map(r => parseFloat(r.pct_planificado)||0);
+    const sparkSpi    = histAsc.map(r => parseFloat(r.spi)|| (parseFloat(r.pct_planificado||0)>0 ? parseFloat(r.pct_ejecutado||0)/parseFloat(r.pct_planificado||0) : 0));
+    const sparkRondas = histAsc.map(r => {
+      const ok=parseInt(r.rondas_ok)||0, tt=parseInt(r.rondas_total)||10;
+      return tt ? (ok/tt)*100 : 0;
+    });
+    const sparkPersonal = histAsc.map(r => parseInt(r.personal_total)||0);
+    const sparkEval = (contratasTbl||[]).slice(0,8).reverse().map(c=>parseFloat(c.puntaje_final)||0).filter(v=>v>0);
+
+    // ── Estados por KPI ──
+    const stateAvance = delta >= -2 ? 'good' : delta >= -8 ? 'warn' : 'bad';
+    const stateSpi    = spi >= 0.96 ? 'good' : spi >= 0.85 ? 'warn' : 'bad';
+    const stateEval   = evalCt >= 8 ? 'good' : evalCt >= 6 ? 'warn' : evalCt > 0 ? 'bad' : 'neutral';
+    const stateRondas = rondasPct >= 80 ? 'good' : rondasPct >= 50 ? 'warn' : 'bad';
+
+    // ── Status badge (curva S) ──
+    const statusBadge = document.getElementById('dash-status-badge');
+    if (statusBadge) {
+      if (delta >= -2) { statusBadge.className = 'proj-badge estado-activo'; statusBadge.textContent = 'EN PLAN'; }
+      else if (delta >= -8) { statusBadge.className = 'proj-badge estado-pausado'; statusBadge.textContent = 'ATENCIÓN'; }
+      else { statusBadge.className = 'proj-badge'; statusBadge.style.cssText='background:var(--danger-bg);color:#991b1b;border-color:rgba(220,38,38,.22);'; statusBadge.textContent = 'ATRASADO'; }
+    }
+
+    // ── Project Health (topbar) ──
+    if (stateSpi === 'good' && stateAvance === 'good') setProjectHealth('good','En plan · SPI '+spi.toFixed(2));
+    else if (stateSpi === 'good' || stateSpi === 'warn') setProjectHealth('warn','Atención · SPI '+spi.toFixed(2));
+    else setProjectHealth('bad','Crítico · SPI '+spi.toFixed(2));
+
+    // ── Señales para prioridades / briefing ──
+    const hoyStr = new Date().toISOString().slice(0,10);
+    const riesgosAltos = (riesgosTbl||[]).filter(r => (r.nivel||'').toUpperCase()==='ALTO' && (r.estado||'abierto').toLowerCase()==='abierto').length;
+    const contratasBajas = (contratasTbl||[]).slice(0,8).filter(c => parseFloat(c.puntaje_final||0) > 0 && parseFloat(c.puntaje_final||0) < 6).length;
+    const ganttAtrasadas = (ganttTbl||[]).filter(t => parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base && t.fecha_fin_base < hoyStr).length;
+    const diasSinReporte = ultimo.fecha_reporte && ultimo.fecha_reporte < hoyStr
+      ? Math.floor((new Date(hoyStr) - new Date(ultimo.fecha_reporte))/86400000) : 0;
+    const prioritiesCount =
+      (stateSpi==='bad'?1:0) + (riesgosAltos>0?1:0) + (contratasBajas>0?1:0) +
+      (ganttAtrasadas>0?1:0) + (diasSinReporte>=1?1:0) + (rondasPct<70?1:0);
+
+    // ── Build ctx global ──
+    _dashCtx = {
+      supervisor: firstName(currentUser),
+      proyectoNombre: nombre,
+      avance, plan, spi, evalCt, rondasOk, rondasTot, rondasPct, personal,
+      deltaAvance, deltaPlan, deltaSpi, deltaRondas, deltaPersonal, deltaEval,
+      sparkAvance, sparkPlan, sparkSpi, sparkRondas, sparkPersonal, sparkEval,
+      stateAvance, stateSpi, stateEval, stateRondas,
+      riesgosAltos, contratasBajas, ganttAtrasadas, diasSinReporte, prioritiesCount
+    };
+
+    // ── Render cockpit ──
+    renderKPIs(_dashCtx);
+    poblarBriefing();
+    renderPrioridades(_dashCtx);
+    renderTimeline(_dashCtx, _dashSources);
+    renderFeed(_dashSources);
+    dibujarCurvaS(reportes);
+    renderTablaReportes(reportes.slice(0,10));
+
+    // ── Badges contextuales ──
+    if (diasSinReporte >= 1) setBadgeFromData('diario', diasSinReporte > 1 ? diasSinReporte+'d' : '1', 'warn');
+    else setBadgeFromData('diario', 0);
+
   } catch(e) {
     console.error('Dashboard error:', e);
     setProjectHealth('idle','Error al cargar');
+    showToast('Error cargando dashboard', 3200, 'error');
   }
 }
 
 function dibujarCurvaS(reportes) {
   const canvas = document.getElementById('curva-canvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  canvas.width = canvas.offsetWidth || 800;
-  canvas.height = canvas.offsetHeight || 200;
-  const W = canvas.width, H = canvas.height;
-  const pad = { t:20, r:20, b:30, l:50 };
-  const datos = [...reportes].reverse();
-  if (datos.length < 2) return;
+  // HiDPI
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.offsetWidth || 800;
+  const cssH = canvas.offsetHeight || 220;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W = cssW, H = cssH;
+  const pad = { t:18, r:18, b:28, l:42 };
+  const inner = { w: W - pad.l - pad.r, h: H - pad.t - pad.b };
 
   ctx.clearRect(0,0,W,H);
 
+  const datos = [...(reportes||[])].reverse();
+  if (datos.length < 2) {
+    // Empty state
+    ctx.fillStyle = 'rgba(15,23,42,.30)';
+    ctx.font = '600 12px Inter,system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Aún no hay datos suficientes para trazar la curva S', W/2, H/2);
+    ctx.font = '11px Inter,system-ui';
+    ctx.fillStyle = 'rgba(15,23,42,.20)';
+    ctx.fillText('Registra al menos 2 reportes diarios.', W/2, H/2 + 18);
+    return;
+  }
+
   const plans = datos.map(r => parseFloat(r.pct_planificado)||0);
-  const reals  = datos.map(r => parseFloat(r.pct_ejecutado)||0);
-  const maxY   = 100;
-  const n      = datos.length;
+  const reals = datos.map(r => parseFloat(r.pct_ejecutado)||0);
+  const maxY  = 100;
+  const n     = datos.length;
 
-  const xScale = i => pad.l + (i/(n-1)) * (W - pad.l - pad.r);
-  const yScale = v => H - pad.b - (v/maxY) * (H - pad.t - pad.b);
+  const xScale = i => pad.l + (i/(n-1)) * inner.w;
+  const yScale = v => H - pad.b - (v/maxY) * inner.h;
 
-  // Grid
-  ctx.strokeStyle = '#dde3ef'; ctx.lineWidth = 0.5;
+  // ── Grid horizontal sutil ──
+  ctx.strokeStyle = 'rgba(15,23,42,.06)';
+  ctx.lineWidth = 1;
   [0,25,50,75,100].forEach(v => {
     ctx.beginPath();
     ctx.moveTo(pad.l, yScale(v));
     ctx.lineTo(W - pad.r, yScale(v));
     ctx.stroke();
-    ctx.fillStyle = '#9ca3af'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right';
-    ctx.fillText(v+'%', pad.l-6, yScale(v)+4);
+    ctx.fillStyle = 'rgba(15,23,42,.35)';
+    ctx.font = '600 9.5px Inter,system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(v+'%', pad.l-8, yScale(v)+3);
   });
 
-  // Plan line
-  ctx.beginPath(); ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
-  plans.forEach((v,i) => i===0 ? ctx.moveTo(xScale(i), yScale(v)) : ctx.lineTo(xScale(i), yScale(v)));
-  ctx.stroke(); ctx.setLineDash([]);
+  // ── Gradient fill bajo la curva REAL ──
+  const grd = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grd.addColorStop(0, 'rgba(8,145,178,.32)');
+  grd.addColorStop(1, 'rgba(8,145,178,0)');
+  ctx.beginPath();
+  reals.forEach((v,i) => {
+    const x = xScale(i), y = yScale(v);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(xScale(n-1), H - pad.b);
+  ctx.lineTo(xScale(0), H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = grd;
+  ctx.fill();
 
-  // Real line
-  ctx.beginPath(); ctx.strokeStyle = '#0891B2'; ctx.lineWidth = 2.5;
-  reals.forEach((v,i) => i===0 ? ctx.moveTo(xScale(i), yScale(v)) : ctx.lineTo(xScale(i), yScale(v)));
+  // ── Línea PLAN (dashed gris) ──
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(15,23,42,.42)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5,4]);
+  plans.forEach((v,i) => {
+    const x = xScale(i), y = yScale(v);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Línea REAL (gradient stroke teal→brand) ──
+  const lineGrad = ctx.createLinearGradient(pad.l, 0, W-pad.r, 0);
+  lineGrad.addColorStop(0, '#06b6d4');
+  lineGrad.addColorStop(1, '#2E7DD1');
+  ctx.beginPath();
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = 2.8;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  reals.forEach((v,i) => {
+    const x = xScale(i), y = yScale(v);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
   ctx.stroke();
 
-  // Puntos real
+  // ── Puntos REAL (último resaltado con glow) ──
   reals.forEach((v,i) => {
+    const x = xScale(i), y = yScale(v);
+    const isLast = i === n-1;
+    if (isLast) {
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(6,182,212,.18)';
+      ctx.fill();
+    }
     ctx.beginPath();
-    ctx.arc(xScale(i), yScale(v), 3.5, 0, Math.PI*2);
-    ctx.fillStyle = '#0891B2'; ctx.fill();
+    ctx.arc(x, y, isLast?4:2.8, 0, Math.PI*2);
+    ctx.fillStyle = isLast ? '#06b6d4' : '#0891B2';
+    ctx.fill();
+    if (isLast) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   });
 
-  // Etiquetas X (fechas)
-  ctx.fillStyle = '#9ca3af'; ctx.font = '9px Segoe UI'; ctx.textAlign = 'center';
+  // ── Etiquetas X (fechas) ──
+  ctx.fillStyle = 'rgba(15,23,42,.45)';
+  ctx.font = '600 9px Inter,system-ui';
+  ctx.textAlign = 'center';
   const step = Math.max(1, Math.floor(n/8));
   datos.forEach((r,i) => {
-    if (i % step === 0) ctx.fillText(r.fecha_reporte?.slice(5)||'', xScale(i), H-6);
+    if (i % step === 0 || i === n-1) {
+      ctx.fillText((r.fecha_reporte||'').slice(5), xScale(i), H-8);
+    }
   });
 }
 
@@ -2288,6 +2794,475 @@ function refreshSmartBadges() {
   Object.keys(_badges).forEach(k => setTabBadge(k, _badges[k], _badgeTones[k]));
   setAlertDot((_badges.riesgos||0) > 0);
 }
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · COCKPIT HELPERS
+// ═══════════════════════════════════════════════
+
+// ── countUp animation ──────────────────────────
+function countUp(el, end, opts) {
+  if (!el) return;
+  opts = opts || {};
+  const decimals = opts.decimals != null ? opts.decimals : 0;
+  const dur = opts.duration || 900;
+  const suffix = opts.suffix || '';
+  const start = parseFloat(el.dataset.cuVal || el.textContent) || 0;
+  const startNum = isNaN(start) ? 0 : start;
+  const endNum = parseFloat(end) || 0;
+  const t0 = performance.now();
+  function frame(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    // easeOutCubic
+    const e = 1 - Math.pow(1 - k, 3);
+    const v = startNum + (endNum - startNum) * e;
+    el.textContent = v.toFixed(decimals) + suffix;
+    if (k < 1) requestAnimationFrame(frame); else { el.dataset.cuVal = endNum; el.textContent = endNum.toFixed(decimals) + suffix; }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── sparkline SVG generator ────────────────────
+function sparklineSVG(values, opts) {
+  opts = opts || {};
+  const w = opts.w || 64, h = opts.h || 24;
+  const stroke = opts.stroke || '#0891B2';
+  const fill = opts.fill || 'rgba(8,145,178,0.14)';
+  if (!values || values.length < 2) {
+    return `<svg viewBox="0 0 ${w} ${h}"><line x1="0" y1="${h-2}" x2="${w}" y2="${h-2}" stroke="rgba(15,23,42,.08)" stroke-width="1" stroke-dasharray="2 3"/></svg>`;
+  }
+  const vMin = Math.min(...values);
+  const vMax = Math.max(...values);
+  const span = (vMax - vMin) || 1;
+  const pad = 2;
+  const pts = values.map((v,i) => {
+    const x = pad + (i/(values.length-1)) * (w - pad*2);
+    const y = (h - pad) - ((v - vMin) / span) * (h - pad*2);
+    return [x, y];
+  });
+  const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = path + ` L${(w-pad).toFixed(1)},${(h-pad).toFixed(1)} L${pad.toFixed(1)},${(h-pad).toFixed(1)} Z`;
+  const last = pts[pts.length-1];
+  const gid = 'spg_' + Math.random().toString(36).slice(2,8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".35"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#${gid})"/><path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" fill="${stroke}"/></svg>`;
+}
+
+// ── format helpers ─────────────────────────────
+function fmtDelta(delta, unit) {
+  unit = unit || '%';
+  if (delta == null || isNaN(delta)) return { cls:'flat', html:'<span>—</span>' };
+  const abs = Math.abs(delta).toFixed(1);
+  if (Math.abs(delta) < 0.05) return { cls:'flat', html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg><span>0' + unit + '</span>' };
+  if (delta > 0) return { cls:'up', html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg><span>+' + abs + unit + '</span>' };
+  return { cls:'down', html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><span>-' + abs + unit + '</span>' };
+}
+
+function timeAgo(d) {
+  if (!d) return '';
+  const dt = (typeof d === 'string') ? new Date(d) : d;
+  if (isNaN(dt)) return '';
+  const diff = (Date.now() - dt.getTime())/1000;
+  if (diff < 60) return 'ahora';
+  if (diff < 3600) return Math.floor(diff/60) + 'min';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd';
+  return dt.toISOString().slice(5,10);
+}
+
+function hhmm(d) {
+  if (!d) return '';
+  const dt = (typeof d === 'string') ? new Date(d) : d;
+  if (isNaN(dt)) return '';
+  return String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+}
+
+function greetingByHour() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function firstName(user) {
+  if (!user) return 'Supervisor';
+  const raw = user.nombre || user.email || '';
+  const base = raw.split('@')[0].split(/[._\s]/)[0];
+  return base ? base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() : 'Supervisor';
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · KPI RENDERER
+// ═══════════════════════════════════════════════
+const _kpiIcons = {
+  avance:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+  plan:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  spi:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14.5"/></svg>',
+  eval:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>',
+  rondas:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  personal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+};
+
+function renderKPIs(d) {
+  const grid = document.getElementById('kpi-grid');
+  if (!grid) return;
+
+  function card(opts) {
+    const trend = fmtDelta(opts.delta, opts.deltaUnit||'%');
+    const stateClass = opts.state || 'neutral';
+    const sparkColor = stateClass==='good' ? '#16a34a' : stateClass==='warn' ? '#d97706' : stateClass==='bad' ? '#dc2626' : '#0891B2';
+    return `<div class="kpi ${stateClass}">
+      <div class="kpi-top">
+        <div class="kpi-icon">${_kpiIcons[opts.icon]||''}</div>
+        <span class="kpi-name">${opts.name}</span>
+        <span class="kpi-trend ${trend.cls}" style="margin-left:auto">${trend.html}</span>
+      </div>
+      <div class="kpi-value"><span id="${opts.id}" data-target="${opts.value}">—</span>${opts.unit?'<span class="kpi-unit">'+opts.unit+'</span>':''}</div>
+      <div class="kpi-foot">
+        <span class="kpi-sub2">${opts.sub||''}</span>
+        <span class="kpi-spark">${sparklineSVG(opts.spark||[], {stroke:sparkColor})}</span>
+      </div>
+    </div>`;
+  }
+
+  grid.innerHTML = [
+    card({ id:'kpi-avance',  icon:'avance',   name:'Avance real',     value:d.avance,  unit:'%', decimals:1, delta:d.deltaAvance, state:d.stateAvance, sub:'% físico ejecutado',           spark:d.sparkAvance }),
+    card({ id:'kpi-plan',    icon:'plan',     name:'Plan acum.',      value:d.plan,    unit:'%', decimals:1, delta:d.deltaPlan,   state:'neutral',     sub:'% planificado a la fecha',     spark:d.sparkPlan }),
+    card({ id:'kpi-spi',     icon:'spi',      name:'SPI',             value:d.spi,     unit:'',  decimals:2, delta:d.deltaSpi, deltaUnit:'', state:d.stateSpi, sub:'Schedule Performance Index', spark:d.sparkSpi }),
+    card({ id:'kpi-eval',    icon:'eval',     name:'Eval. contratas', value:d.evalCt,  unit:'',  decimals:1, delta:d.deltaEval, deltaUnit:'', state:d.stateEval, sub:'Puntaje promedio',          spark:d.sparkEval }),
+    card({ id:'kpi-rondas',  icon:'rondas',   name:'Rondas',          value:d.rondasPct, unit:'%', decimals:0, delta:d.deltaRondas, state:d.stateRondas, sub:`${d.rondasOk||0}/${d.rondasTot||10} hoy`, spark:d.sparkRondas }),
+    card({ id:'kpi-personal',icon:'personal', name:'Personal hoy',    value:d.personal, unit:'', decimals:0, delta:d.deltaPersonal, deltaUnit:'p', state:'neutral', sub:'personas en obra',          spark:d.sparkPersonal })
+  ].join('');
+
+  // count-up
+  grid.querySelectorAll('.kpi-value span[data-target]').forEach(sp => {
+    const target = parseFloat(sp.dataset.target);
+    if (isNaN(target)) { sp.textContent = '—'; return; }
+    const dec = sp.id==='kpi-spi' ? 2 : sp.id==='kpi-eval' ? 1 : sp.id==='kpi-avance' || sp.id==='kpi-plan' ? 1 : 0;
+    countUp(sp, target, { decimals: dec });
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · AI BRIEFING (deterministic, Claude API hook ready)
+// ═══════════════════════════════════════════════
+
+// Hook para Fase 2 final: llamar a Claude API via Vercel Function
+async function claudeBriefingHook(ctx) {
+  // ctx incluye nombre supervisor, KPIs, prioridades, eventos del día.
+  // En Fase 2 sólo retornamos null → fallback a generador determinístico.
+  // En Fase futura: fetch('/api/briefing', { method:'POST', body: JSON.stringify(ctx) }).
+  return null;
+}
+
+function generarBriefingDeterministico(ctx) {
+  const insights = [];
+  const lines = [];
+  const name = ctx.supervisor;
+  const proj = ctx.proyectoNombre || 'tu proyecto';
+
+  // Apertura
+  if (ctx.prioritiesCount === 0) {
+    lines.push(`<strong>${greetingByHour()}, ${name}.</strong> ${proj} viene en línea con el plan. <em>Buen ritmo</em>.`);
+  } else {
+    lines.push(`<strong>${greetingByHour()}, ${name}.</strong> Hoy hay <em>${ctx.prioritiesCount} punto${ctx.prioritiesCount===1?'':'s'} crítico${ctx.prioritiesCount===1?'':'s'}</em> en ${proj}.`);
+  }
+
+  // SPI / avance
+  if (ctx.spi != null && !isNaN(ctx.spi)) {
+    if (ctx.spi < 0.85) {
+      lines.push(`El avance está <strong>significativamente por debajo</strong> del plan (SPI ${ctx.spi.toFixed(2)}). Requiere acción inmediata.`);
+      insights.push({ tone:'danger', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>', t:'Avance crítico', d:`SPI ${ctx.spi.toFixed(2)} · ${ctx.avance.toFixed(1)}% real vs ${ctx.plan.toFixed(1)}% plan` });
+    } else if (ctx.spi < 0.96) {
+      lines.push(`El avance está <strong>ligeramente atrasado</strong> (SPI ${ctx.spi.toFixed(2)}).`);
+      insights.push({ tone:'warn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', t:'SPI bajo umbral', d:`SPI ${ctx.spi.toFixed(2)} · objetivo ≥ 0.96` });
+    } else {
+      insights.push({ tone:'success', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>', t:'Cronograma en línea', d:`SPI ${ctx.spi.toFixed(2)} · ritmo saludable` });
+    }
+  }
+
+  // Variación de avance vs reporte anterior
+  if (ctx.deltaAvance != null && Math.abs(ctx.deltaAvance) >= 0.5) {
+    if (ctx.deltaAvance >= 0) {
+      lines.push(`El avance físico <strong>subió ${ctx.deltaAvance.toFixed(1)}%</strong> respecto al reporte anterior.`);
+    } else {
+      lines.push(`El avance físico <strong>cayó ${Math.abs(ctx.deltaAvance).toFixed(1)}%</strong> respecto al reporte anterior.`);
+      insights.push({ tone:'warn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>', t:'Caída de avance', d:`-${Math.abs(ctx.deltaAvance).toFixed(1)}% vs reporte anterior` });
+    }
+  }
+
+  // Riesgos altos
+  if (ctx.riesgosAltos > 0) {
+    lines.push(`Hay <strong>${ctx.riesgosAltos} riesgo${ctx.riesgosAltos===1?'':'s'} de nivel ALTO sin mitigar</strong>.`);
+    insights.push({ tone:'danger', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>', t:`${ctx.riesgosAltos} riesgo${ctx.riesgosAltos===1?'':'s'} ALTO`, d:'Sin acción de mitigación registrada' });
+  }
+
+  // Contratas bajas
+  if (ctx.contratasBajas > 0) {
+    lines.push(`<strong>${ctx.contratasBajas} contrata${ctx.contratasBajas===1?'':'s'}</strong> con desempeño por debajo del umbral aceptable.`);
+    insights.push({ tone:'warn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>', t:'Bajo rendimiento contrata', d:`${ctx.contratasBajas} con puntaje < 6` });
+  }
+
+  // Gantt atrasadas
+  if (ctx.ganttAtrasadas > 0) {
+    insights.push({ tone:'warn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="3" y2="21"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="9" y1="11" x2="18" y2="11"/></svg>', t:`${ctx.ganttAtrasadas} tarea${ctx.ganttAtrasadas===1?'':'s'} vencida${ctx.ganttAtrasadas===1?'':'s'}`, d:'Fecha fin pasada y avance < 100%' });
+  }
+
+  // Reporte vencido
+  if (ctx.diasSinReporte >= 1) {
+    insights.push({ tone:'warn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', t:`Reporte ${ctx.diasSinReporte>1?ctx.diasSinReporte+' días':'1 día'} sin actualizar`, d:'Registra el reporte diario para mantener trazabilidad' });
+  }
+
+  // Recomendación de cierre
+  if (ctx.riesgosAltos > 0 || (ctx.spi != null && ctx.spi < 0.85)) {
+    lines.push(`<em>Recomendación:</em> prioriza mitigación y comunicación con cliente.`);
+  } else if (ctx.contratasBajas > 0) {
+    lines.push(`<em>Recomendación:</em> reunión de cierre con la contrata afectada.`);
+  } else if (ctx.prioritiesCount === 0) {
+    lines.push(`<em>Recomendación:</em> aprovecha para adelantar valorización o actualizar Gantt.`);
+  }
+
+  return { body: lines.join(' '), insights };
+}
+
+async function regenerarBriefing(spin) {
+  const btn = document.getElementById('ai-refresh-btn');
+  if (spin && btn) btn.classList.add('spinning');
+  try {
+    await poblarBriefing();
+  } finally {
+    setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
+  }
+}
+
+async function poblarBriefing() {
+  const greetEl = document.getElementById('ai-greeting');
+  const bodyEl = document.getElementById('ai-body');
+  const insEl  = document.getElementById('ai-insights');
+  if (!greetEl || !bodyEl) return;
+
+  if (!currentProyecto || !_dashCtx) {
+    greetEl.textContent = `${greetingByHour()}, ${firstName(currentUser)}`;
+    bodyEl.innerHTML = `<span style="opacity:.7">Selecciona un proyecto para activar el briefing inteligente del día.</span>`;
+    insEl.innerHTML = '';
+    return;
+  }
+
+  greetEl.textContent = `${greetingByHour()}, ${firstName(currentUser)}`;
+
+  // Intento Claude API; si null → determinístico
+  let result = null;
+  try { result = await claudeBriefingHook(_dashCtx); } catch(e){ result = null; }
+  if (!result) result = generarBriefingDeterministico(_dashCtx);
+
+  bodyEl.innerHTML = result.body;
+  insEl.innerHTML = (result.insights||[]).map(i =>
+    `<div class="ai-insight tone-${i.tone}"><div class="ic-wrap">${i.icon}</div><div class="txt"><b>${i.t}</b>${i.d||''}</div></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · PRIORITY CENTER
+// ═══════════════════════════════════════════════
+function renderPrioridades(ctx) {
+  const el = document.getElementById('prio-list');
+  const pill = document.getElementById('prio-count-pill');
+  const pillLbl = document.getElementById('prio-count-lbl');
+  if (!el) return;
+
+  const items = [];
+
+  if (ctx.spi != null && ctx.spi < 0.85) {
+    items.push({ imp:'crit', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>',
+      title:'Avance crítico', desc:`SPI ${ctx.spi.toFixed(2)} · real ${ctx.avance.toFixed(1)}% vs plan ${ctx.plan.toFixed(1)}%`, tab:'diario', score: 100 });
+  } else if (ctx.spi != null && ctx.spi < 0.96) {
+    items.push({ imp:'high', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      title:'SPI por debajo de umbral', desc:`SPI ${ctx.spi.toFixed(2)} · revisar plan vs ejecutado`, tab:'diario', score: 70 });
+  }
+
+  if (ctx.riesgosAltos > 0) {
+    items.push({ imp:'crit', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>',
+      title:`${ctx.riesgosAltos} riesgo${ctx.riesgosAltos===1?'':'s'} ALTO sin mitigar`, desc:'Requiere acción inmediata · revisa en pestaña Riesgos', tab:'riesgos', score: 95 });
+  }
+
+  if (ctx.contratasBajas > 0) {
+    items.push({ imp:'high', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+      title:`${ctx.contratasBajas} contrata${ctx.contratasBajas===1?'':'s'} con bajo desempeño`, desc:'Puntaje < 6 · planifica reunión de cierre', tab:'contratas', score: 65 });
+  }
+
+  if (ctx.ganttAtrasadas > 0) {
+    items.push({ imp:'high', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="3" y2="21"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="9" y1="11" x2="18" y2="11"/><line x1="4" y1="16" x2="12" y2="16"/></svg>',
+      title:`${ctx.ganttAtrasadas} tarea${ctx.ganttAtrasadas===1?'':'s'} Gantt vencida${ctx.ganttAtrasadas===1?'':'s'}`, desc:'Fecha fin superada y avance < 100% · actualiza estado', tab:'gantt', score: 60 });
+  }
+
+  if (ctx.diasSinReporte >= 1) {
+    items.push({ imp: ctx.diasSinReporte>=3?'high':'mid', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      title: ctx.diasSinReporte===1 ? 'Reporte diario pendiente' : `${ctx.diasSinReporte} días sin reporte`, desc:'Registra avance, riesgos y personal en obra', tab:'diario', score: 50 + ctx.diasSinReporte*5 });
+  }
+
+  if (ctx.rondasPct != null && ctx.rondasPct < 70) {
+    items.push({ imp:'mid', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14.5"/></svg>',
+      title:'Rondas incompletas', desc:`Sólo ${ctx.rondasOk}/${ctx.rondasTot} rondas hoy (${ctx.rondasPct.toFixed(0)}%)`, tab:'diario', score: 30 });
+  }
+
+  items.sort((a,b) => b.score - a.score);
+
+  if (items.length === 0) {
+    el.innerHTML = `<div class="prio-empty">
+      <div class="check-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div style="color:var(--success);font-weight:800;font-size:13px;margin-bottom:4px;">Todo bajo control</div>
+      <div>No hay items críticos. Aprovecha para adelantar Gantt o valorización.</div>
+    </div>`;
+    if (pill) { pill.className = 'hdr-pill hlth-good'; pillLbl.textContent = 'Todo OK'; }
+    return;
+  }
+
+  el.innerHTML = items.slice(0,6).map(it => `<button type="button" class="prio-item imp-${it.imp}" onclick="showTab('${it.tab}')">
+    <span class="prio-bar"></span>
+    <span class="prio-icon">${it.icon}</span>
+    <span class="prio-text">
+      <div class="prio-title">${it.title}</div>
+      <div class="prio-desc">${it.desc}</div>
+    </span>
+    <span class="prio-cta">Ver <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+  </button>`).join('');
+
+  const crit = items.filter(i => i.imp==='crit').length;
+  if (pill) {
+    if (crit > 0) { pill.className = 'hdr-pill hlth-bad'; pillLbl.textContent = `${items.length} acción${items.length===1?'':'es'}`; }
+    else { pill.className = 'hdr-pill hlth-warn'; pillLbl.textContent = `${items.length} pendiente${items.length===1?'':'s'}`; }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · TIMELINE OPERATIVO DEL DÍA
+// ═══════════════════════════════════════════════
+function renderTimeline(ctx, sources) {
+  const el = document.getElementById('timeline');
+  const dateEl = document.getElementById('tl-date');
+  if (!el) return;
+
+  const hoy = new Date();
+  const hoyStr = hoy.toISOString().slice(0,10);
+  if (dateEl) dateEl.textContent = hoy.toLocaleDateString('es-PE',{weekday:'long', day:'numeric', month:'short'});
+
+  const events = [];
+
+  // Reporte de hoy (jornada)
+  const reps = sources.reportes || [];
+  const repHoy = reps.find(r => r.fecha_reporte === hoyStr);
+  if (repHoy) {
+    if (repHoy.jornada_entrada) events.push({ time: repHoy.jornada_entrada.slice(0,5), tone:'success', chip:'Inicio', title:`Cuadrilla inició jornada${repHoy.personal_total?` con <b>${repHoy.personal_total} personas</b>`:''}` });
+    if (repHoy.actividad) events.push({ time: repHoy.jornada_entrada?.slice(0,5) || '08:00', tone:'info', chip:'Actividad', title:`<b>Actividad principal:</b> ${(repHoy.actividad||'').slice(0,80)}${(repHoy.actividad||'').length>80?'…':''}` });
+    if (repHoy.cliente_visita) events.push({ time: '11:00', tone:'violet', chip:'Cliente', title:`Visita de cliente${repHoy.cliente_nombre?` · <b>${repHoy.cliente_nombre}</b>`:''}` });
+    if (Array.isArray(repHoy.riesgos)) {
+      repHoy.riesgos.forEach((r,i) => {
+        const t = repHoy.jornada_entrada ? hhmm(new Date(`2000-01-01T${repHoy.jornada_entrada}`).getTime() + (i+1)*60*60*1000) : '10:00';
+        events.push({ time: t, tone: r.nivel==='ALTO'?'danger':r.nivel==='MEDIO'?'warn':'info', chip:`Riesgo ${r.nivel||'MEDIO'}`, title: r.descripcion || 'Riesgo detectado' });
+      });
+    }
+    if (repHoy.observaciones) events.push({ time: '14:00', tone:'warn', chip:'Observación', title: (repHoy.observaciones||'').slice(0,90)+((repHoy.observaciones||'').length>90?'…':'') });
+    if (repHoy.jornada_salida) events.push({ time: repHoy.jornada_salida.slice(0,5), tone:'success', chip:'Cierre', title:`Cierre de jornada · avance reportado <b>${parseFloat(repHoy.pct_ejecutado||0).toFixed(1)}%</b>` });
+  }
+
+  // Riesgos creados hoy (tabla riesgos)
+  (sources.riesgos||[]).forEach(r => {
+    if (r.created_at && r.created_at.slice(0,10) === hoyStr) {
+      events.push({ time: hhmm(r.created_at), tone: r.nivel==='ALTO'?'danger':r.nivel==='MEDIO'?'warn':'info',
+        chip:`Riesgo ${r.nivel||'MEDIO'}`, title: r.descripcion || 'Nuevo riesgo registrado' });
+    }
+  });
+
+  // Evaluaciones de contratas de hoy
+  (sources.contratas||[]).forEach(c => {
+    if (c.created_at && c.created_at.slice(0,10) === hoyStr) {
+      const s = parseFloat(c.puntaje_final||0);
+      events.push({ time: hhmm(c.created_at), tone: s>=8?'success':s>=6?'info':'warn',
+        chip:'Contrata', title:`Evaluación <b>${c.contratista||c.empresa||'—'}</b> · ${c.especialidad||''} · puntaje <b>${s||'—'}</b>` });
+    }
+  });
+
+  // sort by time hh:mm
+  events.sort((a,b) => (a.time||'').localeCompare(b.time||''));
+
+  // marcar "now"
+  const nowStr = String(hoy.getHours()).padStart(2,'0')+':'+String(hoy.getMinutes()).padStart(2,'0');
+  let closest = -1, closestDiff = Infinity;
+  events.forEach((e,i) => {
+    const diff = Math.abs(parseInt(e.time.replace(':',''))-parseInt(nowStr.replace(':','')));
+    if (diff < closestDiff) { closest = i; closestDiff = diff; }
+  });
+
+  if (events.length === 0) {
+    el.innerHTML = `<div class="tl-empty">
+      <div style="font-size:24px;margin-bottom:8px;opacity:.45">📋</div>
+      Aún no hay eventos registrados hoy.<br>
+      <span style="font-size:11px;">Guarda el reporte diario o registra un riesgo para verlos aquí.</span>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="timeline">${events.map((e,i) => `<div class="tl-event tone-${e.tone}${i===closest?' now':''}">
+    <span class="tl-dot"></span>
+    <div class="tl-row">
+      <span class="tl-time">${e.time}</span>
+      <span class="tl-chip">${e.chip}</span>
+    </div>
+    <div class="tl-title">${e.title}</div>
+  </div>`).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 2 · FEED OPERATIVO
+// ═══════════════════════════════════════════════
+function renderFeed(sources) {
+  const el = document.getElementById('feed');
+  if (!el) return;
+
+  const events = [];
+  (sources.reportes||[]).slice(0,6).forEach(r => {
+    if (!r.fecha_reporte) return;
+    events.push({ ts: r.created_at || (r.fecha_reporte+'T08:00:00'), kind:'reporte',
+      tag: 'Reporte', msg: `<b>Reporte diario</b> guardado · avance <b>${parseFloat(r.pct_ejecutado||0).toFixed(1)}%</b> · SPI <b>${r.spi||'—'}</b>` });
+  });
+  (sources.riesgos||[]).slice(0,8).forEach(r => {
+    if (!r.created_at) return;
+    events.push({ ts:r.created_at, kind:'riesgo',
+      tag:`Riesgo ${r.nivel||''}`, msg:`<b>Nuevo riesgo</b> · ${(r.descripcion||'').slice(0,72)}${(r.descripcion||'').length>72?'…':''}` });
+  });
+  (sources.contratas||[]).slice(0,8).forEach(c => {
+    if (!c.created_at) return;
+    const s = parseFloat(c.puntaje_final||0);
+    events.push({ ts:c.created_at, kind:'contrata',
+      tag:'Contrata', msg:`<b>${c.contratista||c.empresa||'—'}</b> evaluada · ${c.especialidad||''} · puntaje <b>${s||'—'}</b>` });
+  });
+  (sources.personal||[]).slice(0,5).forEach(p => {
+    if (!p.created_at && !p.fecha) return;
+    events.push({ ts: p.created_at || (p.fecha+'T08:00:00'), kind:'personal',
+      tag:'Personal', msg:`<b>${p.total||0} personas</b> registradas en obra · ${p.fecha||''}` });
+  });
+  (sources.gantt||[]).slice(0,6).forEach(t => {
+    if (!t.updated_at && !t.created_at) return;
+    events.push({ ts: t.updated_at || t.created_at, kind:'gantt',
+      tag:'Gantt', msg:`<b>${(t.nombre_tarea||'').slice(0,55)}</b> · avance ${parseFloat(t.pct_avance||0).toFixed(0)}%` });
+  });
+
+  events.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  const top = events.slice(0,14);
+
+  if (top.length === 0) {
+    el.innerHTML = `<div class="tl-empty">Sin actividad reciente en este proyecto.</div>`;
+    return;
+  }
+
+  el.innerHTML = top.map(e => `<div class="feed-event kind-${e.kind}">
+    <span class="feed-time">${timeAgo(e.ts)}</span>
+    <span class="feed-pulse"></span>
+    <span class="feed-msg"><span class="feed-tag">${e.tag}</span>${e.msg}</span>
+  </div>`).join('');
+}
+
+// Estado global compartido para Phase 2
+let _dashCtx = null;
+let _dashSources = null;
 </script>
 </body>
 </html>
