@@ -4746,10 +4746,17 @@ function toggleGanttLayer(layer) {
   renderGanttBoard();
 }
 
-// ── Drill-down panel ──
+// ─────────────────────────────────────────────
+// PHASE 4C · DRILL-DOWN PANEL · TABS INTERNAS
+// ─────────────────────────────────────────────
+let _tpCurrent = null;       // tarea actualmente abierta
+let _tpAvanceLog = [];       // cache del log de la tarea
+let _tpUnsubPmo = null;      // suscripción a updates PMO
+
 function abrirTaskPanel(t) {
   if (!t) return;
   _ganttState.selectedId = t.id || t.orden;
+  _tpCurrent = t;
   const a = getAnalysis(t);
   const panel = document.getElementById('task-panel');
   const bg = document.getElementById('task-panel-backdrop');
@@ -4758,28 +4765,88 @@ function abrirTaskPanel(t) {
   // Header
   const hp = document.getElementById('tp-health');
   hp.className = 'h-pill h-' + a.salud;
-  document.getElementById('tp-lvl').textContent = t.es_hito ? 'Hito' : (t.nivel===1?'Fase':t.nivel===2?'Subfase':'Tarea') + (t.es_critico?' · Crítica':'');
+  const lvlTxt = t.es_hito ? 'Hito' : (t.nivel===1?'Fase':t.nivel===2?'Subfase':'Tarea');
+  const catTxt = t.categoria ? ' · ' + (CAT_META[t.categoria]?.label || t.categoria) : '';
+  const critTxt = t.es_critico ? ' · Crítica' : '';
+  document.getElementById('tp-lvl').textContent = lvlTxt + catTxt + critTxt;
   document.getElementById('tp-name').textContent = t.nombre_tarea || '—';
 
-  // Body
-  const dur = t.duracion_dias != null ? t.duracion_dias + 'd' : '—';
-  const ini = t.fecha_inicio_base || '—';
-  const fin = t.fecha_fin_base || '—';
+  // Body con tabs
+  document.getElementById('tp-body').innerHTML = `
+    <div class="tp-tabs">
+      <button class="tp-tab active" data-tab="detalles" onclick="tpSwitch('detalles')">
+        ${_gIcons.trend}<span>Detalles</span>
+      </button>
+      <button class="tp-tab" data-tab="pmo" onclick="tpSwitch('pmo')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Equipo PMO</span><span class="tp-tab-cnt" id="tp-cnt-pmo">—</span>
+      </button>
+      <button class="tp-tab" data-tab="historico" onclick="tpSwitch('historico')">
+        ${_gIcons.clock}<span>Histórico</span><span class="tp-tab-cnt" id="tp-cnt-hist">—</span>
+      </button>
+      <button class="tp-tab" data-tab="productividad" onclick="tpSwitch('productividad')">
+        ${_gIcons.pulse}<span>Productividad</span>
+      </button>
+      <button class="tp-tab" data-tab="accion" onclick="tpSwitch('accion')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>⚡ Acción</span>
+      </button>
+    </div>
+    <div class="tp-pane active" id="tp-pane-detalles"></div>
+    <div class="tp-pane" id="tp-pane-pmo"><div class="dim-loading"><span class="spinner"></span>Cargando equipo PMO…</div></div>
+    <div class="tp-pane" id="tp-pane-historico"><div class="dim-loading"><span class="spinner"></span>Cargando histórico…</div></div>
+    <div class="tp-pane" id="tp-pane-productividad"><div class="dim-loading"><span class="spinner"></span>Calculando productividad…</div></div>
+    <div class="tp-pane" id="tp-pane-accion"></div>
+  `;
+
+  // Render inicial: Detalles + Acción (rápidos), PMO + Histórico + Productividad (async)
+  tpRenderDetalles(t);
+  tpRenderAccion(t);
+  tpRenderPMO(t);                              // sync (datos en memoria)
+  tpLoadHistorico(t).then(() => tpRenderHistorico(t));
+  // Productividad se calcula con base en avance_log, después de tpLoadHistorico
+
+  // Suscribirse a PMO live (cuando el PMO cambia, refrescar tab Equipo)
+  if (_tpUnsubPmo) { _tpUnsubPmo(); _tpUnsubPmo = null; }
+  _tpUnsubPmo = pmoSubscribe(() => { if (_tpCurrent === t) tpRenderPMO(t); });
+
+  // Abrir con animación
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  bg.classList.add('open');
+
+  // Marcar fila seleccionada
+  document.querySelectorAll('.gantt-row.selected,.gantt-time-row.selected').forEach(el => el.classList.remove('selected'));
+  const row = document.querySelector(`.gantt-row[data-id="${t.id||''}"]`);
+  const trow = document.querySelector(`.gantt-time-row[data-id="${t.id||''}"]`);
+  if (row) row.classList.add('selected');
+  if (trow) trow.classList.add('selected');
+}
+
+function tpSwitch(name) {
+  document.querySelectorAll('.tp-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tp-pane').forEach(p => p.classList.toggle('active', p.id === 'tp-pane-' + name));
+  // Productividad lazy load (necesita el log ya cargado)
+  if (name === 'productividad' && _tpCurrent) tpRenderProductividad(_tpCurrent);
+}
+
+// ── Tab 1 · DETALLES (analítica + cronograma + forecast) ──
+function tpRenderDetalles(t) {
+  const a = getAnalysis(t);
   const pct = parseFloat(t.pct_avance||0);
   const pctEsp = a.pctEsperado != null ? a.pctEsperado.toFixed(1) : '—';
   const desv = a.desviacion != null ? (a.desviacion>=0?'+':'') + a.desviacion.toFixed(1) : '—';
   const sinMov = a.sinMovDias != null ? a.sinMovDias.toFixed(0) + 'd' : '—';
+  const dur = t.duracion_dias != null ? t.duracion_dias + 'd' : '—';
+  const ini = t.fecha_inicio_base || '—', fin = t.fecha_fin_base || '—';
 
-  // SPI por tarea = pct/pct_esperado
   let spi = '—', spiClass = '';
   if (a.pctEsperado != null && a.pctEsperado > 0) {
-    const s = pct / a.pctEsperado;
-    spi = s.toFixed(2);
+    const s = pct / a.pctEsperado; spi = s.toFixed(2);
     spiClass = s >= 0.96 ? 'good' : s >= 0.85 ? 'warn' : 'bad';
   }
   const desvClass = a.desviacion == null ? '' : a.desviacion >= -2 ? 'good' : a.desviacion >= -8 ? 'warn' : 'bad';
 
-  // Forecast block
   let fcHtml = '';
   if (pct >= 100) {
     fcHtml = `<div class="tp-fc early"><div class="tp-fc-row"><div class="tp-fc-t">Tarea completada</div><div class="tp-fc-v">✓</div></div><div class="tp-fc-d">100% ejecutado</div></div>`;
@@ -4788,46 +4855,17 @@ function abrirTaskPanel(t) {
     const lateClass = fc.diasRetraso > 2 ? 'late' : fc.diasRetraso < -1 ? 'early' : 'ok';
     const fcDate = fc.fechaFin ? fc.fechaFin.toISOString().slice(0,10) : '—';
     const probTxt = fc.prob > 5 ? `<span class="tp-fc-prob">${fc.prob.toFixed(0)}% prob.</span>` : '';
-    const dRetraso = fc.diasRetraso > 0
-      ? `${fc.diasRetraso.toFixed(0)}d tarde respecto a fecha fin plan (${fin})`
-      : fc.diasRetraso < -1
-        ? `${Math.abs(fc.diasRetraso).toFixed(0)}d adelantada respecto a plan`
-        : `En línea con la fecha fin plan`;
-    fcHtml = `<div class="tp-fc ${lateClass}">
-      <div class="tp-fc-row"><div class="tp-fc-t">Forecast fin</div><div class="tp-fc-v">${fcDate}</div></div>
-      <div class="tp-fc-d">${dRetraso}</div>
-      ${probTxt}
-    </div>`;
+    const dRetraso = fc.diasRetraso > 0 ? `${fc.diasRetraso.toFixed(0)}d tarde respecto a fecha fin plan (${fin})`
+                  : fc.diasRetraso < -1 ? `${Math.abs(fc.diasRetraso).toFixed(0)}d adelantada respecto a plan`
+                  : `En línea con la fecha fin plan`;
+    fcHtml = `<div class="tp-fc ${lateClass}"><div class="tp-fc-row"><div class="tp-fc-t">Forecast fin</div><div class="tp-fc-v">${fcDate}</div></div><div class="tp-fc-d">${dRetraso}</div>${probTxt}</div>`;
   } else {
     fcHtml = `<div class="tp-fc ok"><div class="tp-fc-row"><div class="tp-fc-t">Forecast</div><div class="tp-fc-v">—</div></div><div class="tp-fc-d">Sin datos suficientes para predecir.</div></div>`;
   }
 
-  // Status label
   const statusLabels = { 'sin_fecha':'Sin fecha','no_iniciada':'No iniciada','en_plan':'En plan','riesgo':'Riesgo creciente','critica':'Crítica','bloqueada':'Bloqueada','completa':'Completa' };
 
-  // Related items (reportes/riesgos)
-  const sources = _dashSources || { reportes:[], riesgos:[] };
-  const nameLow = (t.nombre_tarea||'').toLowerCase();
-  const keywords = nameLow.split(/\s+/).filter(w => w.length >= 5).slice(0,3);
-  const relReportes = (sources.reportes||[]).filter(r =>
-    keywords.some(k => (r.actividad||'').toLowerCase().includes(k) || (r.observaciones||'').toLowerCase().includes(k))
-  ).slice(0,3);
-  const relRiesgos = (sources.riesgos||[]).filter(r =>
-    keywords.some(k => (r.descripcion||'').toLowerCase().includes(k))
-  ).slice(0,3);
-
-  let relHtml = '';
-  if (relReportes.length === 0 && relRiesgos.length === 0) {
-    relHtml = `<div class="empty">No se encontraron reportes ni riesgos asociados por nombre.</div>`;
-  } else {
-    relHtml = [
-      ...relRiesgos.map(r => `<div class="tp-rel-row kind-riesgo"><span class="rel-t">Riesgo ${r.nivel||'M'}</span><span>${(r.descripcion||'').slice(0,80)}</span></div>`),
-      ...relReportes.map(r => `<div class="tp-rel-row kind-reporte"><span class="rel-t">Reporte ${r.fecha_reporte||''}</span><span>${(r.actividad||'').slice(0,80)}</span></div>`)
-    ].join('');
-  }
-
-  // Inyectar body
-  document.getElementById('tp-body').innerHTML = `
+  document.getElementById('tp-pane-detalles').innerHTML = `
     <div class="tp-grid">
       <div class="tp-stat"><div class="lbl">Estado</div><div class="val" style="font-size:14px">${statusLabels[a.status]||'—'}</div><div class="sub">${t.es_critico?'En ruta crítica':''}</div></div>
       <div class="tp-stat ${desvClass}"><div class="lbl">Desviación</div><div class="val">${desv}%</div><div class="sub">vs ${pctEsp}% esperado</div></div>
@@ -4856,28 +4894,546 @@ function abrirTaskPanel(t) {
       <h4>${_gIcons.pulse} Pronóstico</h4>
       ${fcHtml}
     </div>
-
-    <div class="tp-section">
-      <h4>${_gIcons.warn} Relacionados</h4>
-      <div class="tp-related">${relHtml}</div>
-    </div>
-
-    <div class="tp-actions">
-      <button class="btn btn-teal" onclick="editarAvanceGantt('${t.id||''}',${pct});setTimeout(cerrarTaskPanel,200)">Actualizar avance</button>
-      <button class="btn btn-outline" onclick="cerrarTaskPanel()">Cerrar</button>
-    </div>
   `;
+}
 
-  panel.classList.add('open');
-  panel.setAttribute('aria-hidden','false');
-  bg.classList.add('open');
+// ── Tab 2 · EQUIPO PMO (live desde friopacking-live) ──
+function tpRenderPMO(t) {
+  const pane = document.getElementById('tp-pane-pmo');
+  const cnt  = document.getElementById('tp-cnt-pmo');
+  if (!pane) return;
 
-  // Marcar fila seleccionada
-  document.querySelectorAll('.gantt-row.selected,.gantt-time-row.selected').forEach(el => el.classList.remove('selected'));
-  const row = document.querySelector(`.gantt-row[data-id="${t.id||''}"]`);
-  const trow = document.querySelector(`.gantt-time-row[data-id="${t.id||''}"]`);
-  if (row) row.classList.add('selected');
-  if (trow) trow.classList.add('selected');
+  if (_pmoState.status === 'error') {
+    pane.innerHTML = `<div class="pmo-empty">⚠ PMO sin conexión. Reintentando…</div>`;
+    if (cnt) cnt.textContent = '—';
+    return;
+  }
+  if (_pmoState.status === 'idle' || _pmoState.status === 'syncing') {
+    pane.innerHTML = `<div class="dim-loading"><span class="spinner"></span>Esperando PMO…</div>`;
+    return;
+  }
+
+  const proj = pmoCurrentProject();
+  const equipos = pmoCurrentEquipos();
+  // Filtrar equipos relevantes a la tarea por keyword del nombre
+  const nameLow = (t.nombre_tarea||'').toLowerCase();
+  const taskKws = nameLow.split(/\s+/).filter(w => w.length >= 4);
+  const equiposRelevantes = equipos.filter(e => {
+    const tipo = (e.tipo||'').toLowerCase();
+    return taskKws.some(k => tipo.includes(k) || k.includes(tipo));
+  });
+  const totalEquipos = equipos.length;
+  if (cnt) cnt.textContent = totalEquipos;
+
+  let projHtml = '';
+  if (proj) {
+    const fmtM = v => v ? new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(v) : '—';
+    const valp = parseFloat(proj.valp||0);
+    const valpClass = valp >= 95 ? 'good' : valp >= 80 ? 'warn' : 'bad';
+    const spiPmo = parseFloat(proj.spi||0);
+    const spiClass = spiPmo >= 0.96 ? 'good' : spiPmo >= 0.85 ? 'warn' : 'bad';
+    projHtml = `<div class="tp-section">
+      <h4>${_gIcons.flag} Proyecto en PMO · live</h4>
+      <div class="tp-grid">
+        <div class="tp-stat ${valpClass}"><div class="lbl">% Avance PMO</div><div class="val">${valp.toFixed(1)}%</div><div class="sub">según PMO</div></div>
+        <div class="tp-stat ${spiClass}"><div class="lbl">SPI PMO</div><div class="val">${spiPmo.toFixed(2)}</div><div class="sub">${proj.estado||''}</div></div>
+        <div class="tp-stat"><div class="lbl">Venta</div><div class="val" style="font-size:14px">$ ${fmtM(proj.venta)}</div></div>
+        <div class="tp-stat"><div class="lbl">Facturado</div><div class="val" style="font-size:14px">$ ${fmtM(proj.fact)}</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;">
+        <span><b style="color:var(--navy-700);">Supervisor PMO:</b> ${proj.sup||'—'}</span>
+        <span><b style="color:var(--navy-700);">Depto:</b> ${proj.dep||'—'}</span>
+        <span><b style="color:var(--navy-700);">Tipo:</b> ${proj.tipo||'—'}</span>
+        <span><b style="color:var(--navy-700);">Inicio:</b> ${proj.ci||'—'}</span>
+        <span><b style="color:var(--navy-700);">Fin:</b> ${proj.cf||'—'}</span>
+      </div>
+    </div>`;
+  } else {
+    projHtml = `<div class="tp-section"><h4>${_gIcons.flag} Proyecto en PMO</h4><div class="pmo-empty">Proyecto no encontrado en PMO live.</div></div>`;
+  }
+
+  // Equipos: priorizar los relevantes, luego mostrar el resto
+  const renderEquipo = e => {
+    const ini = ((e.tipo||'').slice(0,2)).toUpperCase();
+    const statusColor = /culmin|recib|entreg/i.test(e.st||'') ? 'good' : /tr[áa]nsito|embarq/i.test(e.st||'') ? 'warn' : 'idle';
+    return `<div class="pmo-card">
+      <div class="pmo-avatar">${ini}</div>
+      <div class="pmo-info">
+        <div class="pmo-name">${e.tipo||'—'} · ${e.proveedor||''}</div>
+        <div class="pmo-meta">
+          <span><b>Doc:</b> ${e.doc||'—'}</span>
+          <span><b>Origen:</b> ${e.origen||'—'}</span>
+          <span><b>Modo:</b> ${e.mod||'—'}</span>
+          <span class="h-pill h-${statusColor}" style="width:auto;padding:0 8px;border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.04em;">${e.st||'—'}</span>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  let equiposHtml = '';
+  if (totalEquipos === 0) {
+    equiposHtml = `<div class="tp-section"><h4>${_gIcons.warn} Equipos asignados</h4><div class="pmo-empty">No hay equipos asignados a este proyecto en PMO.</div></div>`;
+  } else {
+    const rel = equiposRelevantes.slice(0, 8);
+    const otros = equipos.filter(e => !equiposRelevantes.includes(e)).slice(0, 6);
+    equiposHtml = `<div class="tp-section">
+      <h4>${_gIcons.warn} Equipos relevantes a esta tarea ${rel.length>0?`<span class="tp-tab-cnt" style="background:var(--teal-500);color:#fff">${rel.length}</span>`:''}</h4>
+      <div class="pmo-team">
+        ${rel.length>0 ? rel.map(renderEquipo).join('') : `<div class="pmo-empty">Sin coincidencias por nombre de tarea.</div>`}
+      </div>
+    </div>`;
+    if (otros.length > 0) {
+      equiposHtml += `<div class="tp-section">
+        <h4>${_gIcons.warn} Otros equipos del proyecto <span class="tp-tab-cnt">${otros.length}</span></h4>
+        <div class="pmo-team">${otros.map(renderEquipo).join('')}</div>
+      </div>`;
+    }
+  }
+
+  const ts = new Date(_pmoState.lastFetch).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  pane.innerHTML = projHtml + equiposHtml +
+    `<div style="font-size:10px;color:var(--text-3);text-align:right;margin-top:10px;">⟳ PMO sincronizado ${ts} · <span style="color:var(--teal-700);cursor:pointer" onclick="syncPMO(true)">Refrescar ahora</span></div>`;
+}
+
+// ── Tab 3 · HISTÓRICO (avance_log de la tarea) ──
+async function tpLoadHistorico(t) {
+  if (!t || !t.id) { _tpAvanceLog = []; return; }
+  try {
+    const rows = await sbFetch(`/rest/v1/avance_log?tarea_id=eq.${t.id}&order=fecha.desc&limit=30`);
+    _tpAvanceLog = rows || [];
+  } catch (e) {
+    _tpAvanceLog = [];
+  }
+}
+
+function tpRenderHistorico(t) {
+  const pane = document.getElementById('tp-pane-historico');
+  const cnt  = document.getElementById('tp-cnt-hist');
+  if (!pane) return;
+  const log = _tpAvanceLog || [];
+  if (cnt) cnt.textContent = log.length;
+
+  if (log.length === 0) {
+    pane.innerHTML = `<div class="dim-loading">Sin registros de avance todavía.<br><span style="font-size:10.5px;color:var(--text-3);">Usa la tab "⚡ Acción" para registrar el primer avance.</span></div>`;
+    return;
+  }
+
+  pane.innerHTML = `<div class="tp-section">
+    <h4>${_gIcons.clock} Registros de avance · ${log.length}</h4>
+    <div class="av-log">
+      ${log.map(r => {
+        const d = r.fecha || (r.created_at||'').slice(0,10) || '—';
+        const delta = parseFloat(r.pct_delta||0);
+        const pct = parseFloat(r.pct_resultante||0);
+        const photo = r.foto_url ? `<img class="av-photo" src="${r.foto_url}" alt="" onclick="window.open('${r.foto_url}','_blank')">` : '';
+        const arrow = delta >= 0
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        const deltaTxt = delta === 0 ? '—' : `${delta>0?'+':''}${delta.toFixed(1)}%`;
+        let label = '';
+        if (r.estado_cumplimiento === true)  label = '<b style="color:var(--success)">✓ Cumplido</b>';
+        else if (r.estado_cumplimiento === false) label = '<b style="color:var(--text-3)">Pendiente</b>';
+        else if (r.cantidad_ejecutada != null) label = `<b>Cantidad ejecutada:</b> ${r.cantidad_ejecutada} ${t.unidad||''}`;
+        else label = `<b>Avance:</b> ${pct.toFixed(1)}%`;
+        return `<div class="av-row">
+          <div class="av-date">${d.slice(5)}</div>
+          <div class="av-content">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="av-delta ${delta<0?'neg':''}">${arrow}${deltaTxt}</span>
+              <span style="font-size:11.5px;color:var(--text-2);">${label}</span>
+              ${r.supervisor?`<span style="font-size:10px;color:var(--text-3);">· ${r.supervisor}</span>`:''}
+            </div>
+            ${r.nota ? `<div class="av-nota">${r.nota}</div>` : ''}
+          </div>
+          ${photo}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Tab 4 · PRODUCTIVIDAD (chart canvas + KPIs) ──
+function tpRenderProductividad(t) {
+  const pane = document.getElementById('tp-pane-productividad');
+  if (!pane) return;
+  const log = (_tpAvanceLog || []).slice().reverse(); // asc por fecha
+
+  if (log.length < 2) {
+    pane.innerHTML = `<div class="dim-loading">Se necesitan al menos 2 registros de avance para calcular productividad.<br><span style="font-size:10.5px">Usa la tab "⚡ Acción" para registrar avances.</span></div>`;
+    return;
+  }
+
+  // Calcular series
+  const pts = log.map(r => ({
+    d: new Date(r.fecha || r.created_at),
+    pct: parseFloat(r.pct_resultante||0),
+    qty: r.cantidad_ejecutada != null ? parseFloat(r.cantidad_ejecutada) : null
+  }));
+
+  // Velocidad: pct/día o qty/día
+  const useQty = pts.every(p => p.qty != null);
+  const series = pts;
+  const velocidades = [];
+  for (let i = 1; i < series.length; i++) {
+    const dt = (series[i].d - series[i-1].d) / 86400000;
+    if (dt <= 0) continue;
+    const dv = useQty ? (series[i].qty - series[i-1].qty) : (series[i].pct - series[i-1].pct);
+    velocidades.push(dv / dt);
+  }
+  const velAvg = velocidades.length ? velocidades.reduce((s,v) => s+v, 0) / velocidades.length : 0;
+  const velMax = velocidades.length ? Math.max(...velocidades) : 0;
+  const velUltima = velocidades.length ? velocidades[velocidades.length-1] : 0;
+  const tendencia = velocidades.length >= 2
+    ? (velUltima > velAvg * 1.10 ? '↑ Acelerando' : velUltima < velAvg * 0.85 ? '↓ Ralentizando' : '→ Estable')
+    : '—';
+  const tendClass = velUltima > velAvg ? 'good' : velUltima < velAvg * 0.85 ? 'bad' : 'warn';
+
+  // Estimación días para completar
+  const pct = parseFloat(t.pct_avance||0);
+  const diasParaCompletar = pct < 100 && velAvg > 0 ? ((useQty ? (parseFloat(t.cantidad_total||0)-parseFloat(t.cantidad_ejecutada||0)) : (100-pct)) / velAvg).toFixed(0) : '—';
+
+  const unidad = useQty ? (t.unidad || 'und') + '/d' : '%/d';
+
+  pane.innerHTML = `
+    <div class="tp-section">
+      <h4>${_gIcons.trend} Curva de productividad</h4>
+      <div class="prod-chart"><canvas id="tp-prod-canvas"></canvas></div>
+      <div class="prod-stats">
+        <div class="prod-stat"><div class="lbl">Vel. promedio</div><div class="val">${velAvg.toFixed(2)}</div><div class="sub">${unidad}</div></div>
+        <div class="prod-stat"><div class="lbl">Vel. máxima</div><div class="val">${velMax.toFixed(2)}</div><div class="sub">${unidad} pico</div></div>
+        <div class="prod-stat"><div class="lbl">Vel. última</div><div class="val">${velUltima.toFixed(2)}</div><div class="sub">${tendencia}</div></div>
+        <div class="prod-stat ${tendClass}"><div class="lbl">Días para fin</div><div class="val">${diasParaCompletar}</div><div class="sub">al ritmo actual</div></div>
+      </div>
+    </div>`;
+
+  // Dibuja chart
+  setTimeout(() => tpDibujarProdChart(series, velocidades), 60);
+}
+
+function tpDibujarProdChart(series, velocidades) {
+  const canvas = document.getElementById('tp-prod-canvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.offsetWidth || 380;
+  const cssH = canvas.offsetHeight || 130;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssW,cssH);
+
+  const pad = { t:10, r:14, b:18, l:32 };
+  const W = cssW - pad.l - pad.r;
+  const H = cssH - pad.t - pad.b;
+
+  const ys = series.map(p => p.pct);
+  const yMax = Math.max(...ys, 100);
+  const yMin = 0;
+  const xs = series.map(p => p.d.getTime());
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const xRange = (xMax - xMin) || 1;
+
+  // grid horizontal
+  ctx.strokeStyle = 'rgba(15,23,42,.08)'; ctx.lineWidth = 1;
+  [0, 50, 100].forEach(v => {
+    const y = pad.t + H - (v/yMax)*H;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+W, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(15,23,42,.40)'; ctx.font = '600 9px Inter';
+    ctx.textAlign = 'right'; ctx.fillText(v + '%', pad.l - 6, y + 3);
+  });
+
+  // área bajo la curva
+  const grd = ctx.createLinearGradient(0, pad.t, 0, pad.t + H);
+  grd.addColorStop(0, 'rgba(8,145,178,.30)');
+  grd.addColorStop(1, 'rgba(8,145,178,0)');
+  ctx.beginPath();
+  series.forEach((p, i) => {
+    const x = pad.l + ((p.d.getTime() - xMin) / xRange) * W;
+    const y = pad.t + H - (p.pct/yMax) * H;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.l + W, pad.t + H);
+  ctx.lineTo(pad.l, pad.t + H);
+  ctx.closePath();
+  ctx.fillStyle = grd; ctx.fill();
+
+  // línea
+  const lineGrad = ctx.createLinearGradient(pad.l, 0, pad.l + W, 0);
+  lineGrad.addColorStop(0, '#06b6d4'); lineGrad.addColorStop(1, '#7c3aed');
+  ctx.beginPath();
+  ctx.strokeStyle = lineGrad; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  series.forEach((p, i) => {
+    const x = pad.l + ((p.d.getTime() - xMin) / xRange) * W;
+    const y = pad.t + H - (p.pct/yMax) * H;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // puntos
+  series.forEach((p, i) => {
+    const x = pad.l + ((p.d.getTime() - xMin) / xRange) * W;
+    const y = pad.t + H - (p.pct/yMax) * H;
+    const isLast = i === series.length - 1;
+    if (isLast) { ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fillStyle = 'rgba(124,58,237,.18)'; ctx.fill(); }
+    ctx.beginPath();
+    ctx.arc(x, y, isLast?4:2.6, 0, Math.PI*2);
+    ctx.fillStyle = isLast ? '#7c3aed' : '#0891B2'; ctx.fill();
+    if (isLast) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  });
+
+  // fechas X
+  ctx.fillStyle = 'rgba(15,23,42,.40)'; ctx.font = '600 8.5px Inter'; ctx.textAlign = 'center';
+  const step = Math.max(1, Math.floor(series.length / 5));
+  series.forEach((p, i) => {
+    if (i % step === 0 || i === series.length - 1) {
+      const x = pad.l + ((p.d.getTime() - xMin) / xRange) * W;
+      ctx.fillText(p.d.toISOString().slice(5,10), x, cssH - 4);
+    }
+  });
+}
+
+// ── Tab 5 · ACCIÓN RÁPIDA (registrar avance + foto) ──
+const _qaState = { photoFile: null, photoUrl: null };
+
+function tpRenderAccion(t) {
+  const pane = document.getElementById('tp-pane-accion');
+  if (!pane) return;
+  _qaState.photoFile = null; _qaState.photoUrl = null;
+  const tm = t.tipo_medicion || 'pct_manual';
+  const pct = parseFloat(t.pct_avance||0);
+  const cantE = parseFloat(t.cantidad_ejecutada||0);
+  const cantT = parseFloat(t.cantidad_total||0);
+
+  let formInputs = '';
+  if (tm === 'cantidad') {
+    formInputs = `
+      <div class="qa-grid">
+        <div class="qa-field"><label>Cantidad ejecutada hoy</label><input type="number" id="qa-qty-add" placeholder="0" min="0" step="0.1"></div>
+        <div class="qa-field"><label>Ejecutado acumulado actual</label><input type="number" id="qa-qty-total" value="${cantE}" min="0" step="0.1"></div>
+      </div>
+      <div class="qa-field full"><label>Cantidad total (objetivo)</label><input type="number" id="qa-qty-objetivo" value="${cantT||''}" placeholder="—" readonly style="background:rgba(15,23,42,.04);"></div>
+    `;
+  } else if (tm === 'cumplimiento') {
+    formInputs = `<div class="qa-grid full"><div style="display:flex;gap:8px;">
+      <button class="btn btn-teal" style="flex:1;height:40px;" onclick="qaQuickCumpl(true)">${pct>=100?'✓ Ya cumplido':'✓ Marcar Cumplido'}</button>
+      <button class="btn btn-outline" style="flex:1;height:40px;" onclick="qaQuickCumpl(false)">Marcar Pendiente</button>
+    </div></div>`;
+  } else if (tm === 'checklist') {
+    const items = Array.isArray(t.checklist_items) ? t.checklist_items : [];
+    formInputs = items.length === 0
+      ? `<div class="qa-field full"><label>No hay ítems en el checklist aún. Crea uno:</label><input type="text" id="qa-cl-new" placeholder="Nuevo ítem…"><button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="qaAddChecklistItem()">+ Agregar</button></div>`
+      : `<div class="qa-field full"><label>Marcar ítems completados</label>${items.map((it,i) => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;cursor:pointer;">
+            <input type="checkbox" ${it.done?'checked':''} onchange="qaToggleChecklist(${i},this.checked)" style="width:16px;height:16px;accent-color:var(--teal-600);">
+            <span style="${it.done?'text-decoration:line-through;color:var(--text-3);':''}">${it.label||'item '+i}</span>
+          </label>`).join('')}
+        </div>`;
+  } else {
+    formInputs = `<div class="qa-field full"><label>Nuevo % de avance</label><input type="range" id="qa-pct-range" min="0" max="100" value="${pct}" step="1" oninput="document.getElementById('qa-pct-num').value=this.value" style="width:100%;">
+      <input type="number" id="qa-pct-num" min="0" max="100" value="${pct}" step="0.1" style="margin-top:6px;width:90px;" oninput="document.getElementById('qa-pct-range').value=this.value">
+    </div>`;
+  }
+
+  pane.innerHTML = `<div class="quick-action">
+    <div class="qa-tit">⚡ Registrar avance · hoy ${new Date().toISOString().slice(0,10)}</div>
+    ${formInputs}
+    <div class="qa-field full"><label>Nota (opcional)</label><textarea id="qa-nota" placeholder="Observación, incidencia, detalle de lo ejecutado…"></textarea></div>
+    <div class="qa-field full"><label>Foto del avance (opcional)</label>
+      <label class="qa-photo-zone" id="qa-photo-zone" ondragover="qaPhotoDragOver(event)" ondragleave="qaPhotoDragLeave(event)" ondrop="qaPhotoDrop(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        <div class="txt" id="qa-photo-txt"><b>Arrastra una foto</b> o haz clic para seleccionar · JPG/PNG/WEBP máx 10MB</div>
+        <input type="file" id="qa-photo-input" accept="image/*" style="display:none" onchange="qaPhotoSelected(this)">
+      </label>
+    </div>
+    <button class="qa-submit" onclick="qaSubmit()">Guardar avance ✓</button>
+  </div>`;
+}
+
+function qaPhotoDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag'); }
+function qaPhotoDragLeave(e){ e.currentTarget.classList.remove('drag'); }
+function qaPhotoDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('drag'); const f = e.dataTransfer?.files?.[0]; if (f) qaPhotoSetFile(f); }
+function qaPhotoSelected(input){ const f = input.files?.[0]; if (f) qaPhotoSetFile(f); }
+function qaPhotoSetFile(f) {
+  if (!f.type.startsWith('image/')) { showToast('Solo imágenes', 2400, 'warn'); return; }
+  if (f.size > 10*1024*1024) { showToast('Máx 10MB', 2400, 'warn'); return; }
+  _qaState.photoFile = f;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const txt = document.getElementById('qa-photo-txt');
+    if (txt) txt.innerHTML = `<img src="${e.target.result}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:8px;"><b>${f.name}</b> · ${(f.size/1024).toFixed(0)} KB`;
+  };
+  reader.readAsDataURL(f);
+}
+
+async function qaUploadPhoto(taskId) {
+  const f = _qaState.photoFile;
+  if (!f) return null;
+  const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${taskId || 'sin-id'}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const token = localStorage.getItem('sb_token') || SB_KEY;
+  const url = SB_URL + '/storage/v1/object/avance-fotos/' + path;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': f.type, 'x-upsert':'true' },
+    body: f
+  });
+  if (!resp.ok) throw new Error('Upload fallido: ' + resp.status);
+  return SB_URL + '/storage/v1/object/public/avance-fotos/' + path;
+}
+
+async function qaSubmit() {
+  const t = _tpCurrent;
+  if (!t) return;
+  const tm = t.tipo_medicion || 'pct_manual';
+  const nota = document.getElementById('qa-nota')?.value || '';
+  setSyncStatus('syncing','Guardando…');
+  try {
+    let fotoUrl = null;
+    if (_qaState.photoFile) {
+      const fakeId = t.id || 'tmp_' + Date.now();
+      fotoUrl = await qaUploadPhoto(fakeId);
+    }
+
+    let pctPrev = parseFloat(t.pct_avance||0);
+    let pctNew = pctPrev;
+    let payloadTarea = { updated_at: new Date().toISOString() };
+    let payloadLog = {
+      tarea_id: t.id || null,
+      cod_proyecto: currentProyecto?.cod || currentProyecto?.nombre,
+      fecha: new Date().toISOString().slice(0,10),
+      nota: nota || null,
+      foto_url: fotoUrl,
+      supervisor: currentUser?.nombre || null,
+      supervisor_email: currentUser?.email || null
+    };
+
+    if (tm === 'cantidad') {
+      const addQty = parseFloat(document.getElementById('qa-qty-add')?.value)||0;
+      const totQty = parseFloat(document.getElementById('qa-qty-total')?.value)||0;
+      const objetivo = parseFloat(t.cantidad_total)||0;
+      const cantNuevo = totQty + addQty;
+      pctNew = objetivo > 0 ? Math.min(100, (cantNuevo/objetivo)*100) : pctPrev;
+      payloadTarea.cantidad_ejecutada = cantNuevo;
+      payloadTarea.pct_avance = pctNew;
+      payloadLog.cantidad_ejecutada = cantNuevo;
+      payloadLog.pct_resultante = pctNew;
+      payloadLog.pct_delta = pctNew - pctPrev;
+    } else if (tm === 'pct_manual') {
+      const newPct = parseFloat(document.getElementById('qa-pct-num')?.value);
+      if (!isNaN(newPct)) pctNew = Math.min(100, Math.max(0, newPct));
+      payloadTarea.pct_avance = pctNew;
+      payloadLog.pct_resultante = pctNew;
+      payloadLog.pct_delta = pctNew - pctPrev;
+    } else if (tm === 'cumplimiento') {
+      // se maneja en qaQuickCumpl, este branch solo guarda nota+foto
+      payloadLog.pct_resultante = pctPrev;
+      payloadLog.pct_delta = 0;
+    } else if (tm === 'checklist') {
+      const items = Array.isArray(t.checklist_items) ? t.checklist_items : [];
+      const done = items.filter(x => x.done).length;
+      const totalItems = items.length || 1;
+      pctNew = (done/totalItems)*100;
+      payloadTarea.pct_avance = pctNew;
+      payloadTarea.checklist_done = done;
+      payloadTarea.checklist_items = items;
+      payloadLog.pct_resultante = pctNew;
+      payloadLog.pct_delta = pctNew - pctPrev;
+      payloadLog.checklist_done = done;
+    }
+
+    // Patch tarea_gantt
+    if (t.id) {
+      await sbFetch(`/rest/v1/tareas_gantt?id=eq.${t.id}`, {
+        method:'PATCH', headers:{'Prefer':'return=minimal'},
+        body: JSON.stringify(payloadTarea)
+      });
+    }
+    // Insert avance_log
+    await sbFetch('/rest/v1/avance_log', {
+      method:'POST', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify(payloadLog)
+    });
+
+    showToast('✓ Avance registrado', 2800, 'success');
+    setSyncStatus('ok','Guardado ✓');
+    // Refrescar todo
+    await cargarGantt();
+    // Re-abrir panel con datos frescos
+    const fresh = (_ganttState.tasks||[]).find(x => x.id === t.id);
+    if (fresh) {
+      _tpCurrent = fresh;
+      tpRenderDetalles(fresh);
+      tpRenderAccion(fresh);
+      await tpLoadHistorico(fresh);
+      tpRenderHistorico(fresh);
+    }
+  } catch (e) {
+    showToast('Error al guardar: ' + (e.message||e), 4000, 'error');
+    setSyncStatus('error','Error');
+    console.error(e);
+  }
+}
+
+async function qaQuickCumpl(val) {
+  const t = _tpCurrent;
+  if (!t || !t.id) return;
+  // Si hay nota o foto, también las incluye
+  const nota = document.getElementById('qa-nota')?.value || (val?'Marcado como cumplido':'Marcado como pendiente');
+  let fotoUrl = null;
+  if (_qaState.photoFile) {
+    try { fotoUrl = await qaUploadPhoto(t.id); } catch(e){}
+  }
+  setSyncStatus('syncing','Guardando…');
+  try {
+    await sbFetch(`/rest/v1/tareas_gantt?id=eq.${t.id}`, {
+      method:'PATCH', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        cumplido: !!val,
+        fecha_cumplido: val ? new Date().toISOString().slice(0,10) : null,
+        pct_avance: val ? 100 : 0,
+        updated_at: new Date().toISOString()
+      })
+    });
+    await sbFetch('/rest/v1/avance_log', {
+      method:'POST', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        tarea_id: t.id,
+        cod_proyecto: currentProyecto?.cod || currentProyecto?.nombre,
+        fecha: new Date().toISOString().slice(0,10),
+        estado_cumplimiento: !!val,
+        pct_resultante: val ? 100 : 0,
+        pct_delta: (val ? 100 : 0) - parseFloat(t.pct_avance||0),
+        nota, foto_url: fotoUrl,
+        supervisor: currentUser?.nombre, supervisor_email: currentUser?.email
+      })
+    });
+    showToast(val ? '✓ Cumplido registrado' : 'Marcado como pendiente', 2400, 'success');
+    setSyncStatus('ok','Guardado ✓');
+    await cargarGantt();
+    const fresh = (_ganttState.tasks||[]).find(x => x.id === t.id);
+    if (fresh) { _tpCurrent = fresh; tpRenderDetalles(fresh); tpRenderAccion(fresh); await tpLoadHistorico(fresh); tpRenderHistorico(fresh); }
+  } catch(e) {
+    showToast('Error: '+(e.message||e), 3500, 'error');
+    setSyncStatus('error','Error');
+  }
+}
+
+function qaAddChecklistItem() {
+  const t = _tpCurrent;
+  if (!t) return;
+  const input = document.getElementById('qa-cl-new');
+  const label = (input?.value||'').trim();
+  if (!label) return;
+  const items = Array.isArray(t.checklist_items) ? t.checklist_items : [];
+  items.push({ id: Date.now()+'_'+Math.random().toString(36).slice(2,6), label, done:false });
+  t.checklist_items = items;
+  if (input) input.value = '';
+  tpRenderAccion(t);
+}
+
+function qaToggleChecklist(idx, val) {
+  const t = _tpCurrent;
+  if (!t || !Array.isArray(t.checklist_items)) return;
+  if (t.checklist_items[idx]) t.checklist_items[idx].done = !!val;
 }
 
 function cerrarTaskPanel() {
@@ -4886,6 +5442,9 @@ function cerrarTaskPanel() {
   if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); }
   if (bg) bg.classList.remove('open');
   _ganttState.selectedId = null;
+  _tpCurrent = null;
+  _tpAvanceLog = [];
+  if (_tpUnsubPmo) { _tpUnsubPmo(); _tpUnsubPmo = null; }
   document.querySelectorAll('.gantt-row.selected,.gantt-time-row.selected').forEach(el => el.classList.remove('selected'));
 }
 
