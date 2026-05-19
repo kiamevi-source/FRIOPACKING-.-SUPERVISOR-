@@ -2405,6 +2405,266 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 /* Lift max-height del board para que se pueda ver TODO */
 .gantt-board{max-height:none!important;}
 
+/* ════════════════════════════════════════════════
+   PHASE 4E · RECOVERY MODE + REPLAY TEMPORAL
+   ════════════════════════════════════════════════ */
+
+/* Recovery Banner (aparece sobre el board cuando hay problemas) */
+.recovery-banner{
+  display:flex;align-items:center;gap:12px;
+  margin:0 20px 14px;padding:13px 16px;
+  background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(245,158,11,.06));
+  border:1px solid rgba(220,38,38,.20);border-radius:14px;
+  position:relative;overflow:hidden;
+  animation:tpFade .35s var(--ease-out);
+  cursor:pointer;transition:all var(--d) var(--ease);
+}
+.recovery-banner:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(220,38,38,.15);}
+.recovery-banner::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,#ef4444,#dc2626);
+  animation:gccPulse 1.4s ease-in-out infinite;
+}
+.recovery-banner.severity-warn{background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(217,119,6,.06));border-color:rgba(217,119,6,.22);}
+.recovery-banner.severity-warn::before{background:linear-gradient(180deg,#f59e0b,#d97706);}
+.recovery-banner .rb-icon{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#fb923c,#ef4444,#dc2626);color:#fff;
+  box-shadow:0 8px 18px rgba(220,38,38,.25),inset 0 1px 0 rgba(255,255,255,.20);
+}
+.recovery-banner.severity-warn .rb-icon{background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706);box-shadow:0 8px 18px rgba(217,119,6,.25);}
+.recovery-banner .rb-icon svg{width:20px;height:20px;}
+.recovery-banner .rb-content{flex:1;min-width:0;}
+.recovery-banner .rb-tit{font-size:12.5px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+.recovery-banner .rb-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  height:18px;padding:0 8px;border-radius:999px;
+  font-size:9.5px;font-weight:800;letter-spacing:.06em;
+  background:rgba(220,38,38,.14);color:#991b1b;text-transform:uppercase;
+}
+.recovery-banner.severity-warn .rb-badge{background:rgba(217,119,6,.14);color:#92400e;}
+.recovery-banner .rb-desc{font-size:11.5px;color:var(--text-2);margin-top:3px;line-height:1.4;}
+.recovery-banner .rb-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:10px;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;
+  font-size:11.5px;font-weight:800;letter-spacing:.04em;
+  border:none;cursor:pointer;font-family:inherit;flex-shrink:0;
+  box-shadow:0 6px 16px rgba(124,58,237,.30),inset 0 1px 0 rgba(255,255,255,.20);
+  transition:all var(--d) var(--ease);
+}
+.recovery-banner .rb-cta:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(124,58,237,.40);}
+.recovery-banner .rb-cta svg{width:14px;height:14px;}
+
+/* Recovery Modal */
+.rm-backdrop{
+  position:fixed;inset:0;z-index:84;
+  background:linear-gradient(135deg,rgba(11,18,38,.55),rgba(220,38,38,.18));
+  backdrop-filter:blur(8px) saturate(140%);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity var(--d) var(--ease);
+}
+.rm-backdrop.open{opacity:1;pointer-events:auto;}
+.rm-modal{
+  position:fixed;left:50%;top:50%;z-index:85;
+  width:min(96vw,920px);max-height:90vh;
+  transform:translate(-50%,-50%) scale(.96);
+  background:var(--glass-strong);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid rgba(255,255,255,.40);
+  border-radius:20px;
+  box-shadow:0 40px 100px rgba(11,23,57,.30),0 1px 0 rgba(255,255,255,.6) inset;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--d) var(--ease-out),transform var(--d-slow) var(--ease-out);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.rm-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.rm-head{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 22px;
+  background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(124,58,237,.06));
+  border-bottom:1px solid var(--border);
+}
+.rm-icon{
+  width:48px;height:48px;border-radius:13px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#fb923c,#ef4444,#7c3aed);color:#fff;
+  box-shadow:0 10px 24px rgba(220,38,38,.30),inset 0 1px 0 rgba(255,255,255,.20);position:relative;
+}
+.rm-icon::after{
+  content:'';position:absolute;inset:-4px;border-radius:15px;
+  border:1px solid rgba(255,255,255,.18);
+  animation:ringPulse 2.4s ease-in-out infinite;
+}
+.rm-icon svg{width:22px;height:22px;}
+.rm-meta{flex:1;min-width:0;}
+.rm-meta .lbl{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);}
+.rm-meta .ttl{font-size:18px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;margin-top:2px;}
+.rm-meta .sub{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+.rm-close{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:rgba(15,23,42,.06);border:none;cursor:pointer;font-family:inherit;
+  color:var(--text-2);transition:all var(--d) var(--ease);
+}
+.rm-close:hover{background:var(--danger-bg);color:#991b1b;}
+.rm-close svg{width:16px;height:16px;}
+
+.rm-summary{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;
+  padding:16px 22px;border-bottom:1px solid var(--border);
+}
+.rm-stat{
+  padding:10px 12px;border-radius:11px;
+  background:rgba(255,255,255,.65);border:1px solid var(--border);
+}
+.rm-stat .lbl{font-size:9.5px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.rm-stat .val{font-size:22px;font-weight:900;color:var(--navy-800);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1;margin-top:2px;}
+.rm-stat .sub{font-size:10.5px;color:var(--text-3);margin-top:2px;}
+.rm-stat.bad .val{color:var(--danger);}
+.rm-stat.warn .val{color:var(--warning);}
+.rm-stat.good .val{color:var(--success);}
+
+.rm-body{flex:1;overflow-y:auto;padding:16px 22px 20px;}
+.rm-section-tit{
+  font-size:11px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--text-3);margin:14px 0 10px;display:flex;align-items:center;gap:8px;
+}
+.rm-section-tit:first-child{margin-top:0;}
+.rm-section-tit .badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:18px;padding:0 6px;border-radius:999px;
+  font-size:9.5px;font-weight:800;letter-spacing:0;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;text-transform:none;
+}
+
+.rm-actions{display:flex;flex-direction:column;gap:10px;}
+.rm-action{
+  display:flex;align-items:stretch;gap:12px;
+  padding:14px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.65));
+  border:1px solid var(--border);
+  transition:all var(--d) var(--ease);
+  position:relative;overflow:hidden;
+  animation:tpFade .4s var(--ease-out) both;
+}
+.rm-action:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08);border-color:var(--border-strong);}
+.rm-action::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--act-color,#0891B2),var(--act-color-dark,#0E7490));
+}
+.rm-action[data-cls="critica"]{--act-color:#ef4444;--act-color-dark:#dc2626;}
+.rm-action[data-cls="alta"]{--act-color:#f59e0b;--act-color-dark:#d97706;}
+.rm-action[data-cls="media"]{--act-color:#0891B2;--act-color-dark:#0E7490;}
+.rm-action[data-cls="baja"]{--act-color:#64748b;--act-color-dark:#475569;}
+.rm-action .ra-icon{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--act-color),var(--act-color-dark));color:#fff;
+  box-shadow:0 6px 14px var(--act-color-glow,rgba(8,145,178,.20)),inset 0 1px 0 rgba(255,255,255,.20);
+}
+.rm-action[data-cls="critica"] .ra-icon{--act-color-glow:rgba(220,38,38,.25);}
+.rm-action[data-cls="alta"] .ra-icon{--act-color-glow:rgba(217,119,6,.25);}
+.rm-action .ra-icon svg{width:18px;height:18px;}
+.rm-action .ra-body{flex:1;min-width:0;}
+.rm-action .ra-tit{font-size:13.5px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;line-height:1.25;}
+.rm-action .ra-desc{font-size:11.5px;color:var(--text-2);margin-top:4px;line-height:1.45;}
+.rm-action .ra-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+.rm-action .ra-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  height:24px;padding:0 10px;border-radius:999px;
+  font-size:10.5px;font-weight:800;letter-spacing:.04em;
+  background:var(--surface-2);color:var(--text-2);
+}
+.rm-action .ra-chip.recover{background:var(--success-bg);color:#166534;}
+.rm-action .ra-chip.cost{background:rgba(46,125,209,.08);color:var(--brand-700);}
+.rm-action .ra-chip.tasks{background:rgba(124,58,237,.08);color:var(--violet-600);}
+.rm-action .ra-chip svg{width:11px;height:11px;}
+.rm-action .ra-apply{
+  display:inline-flex;align-items:center;gap:5px;
+  height:30px;padding:0 14px;border-radius:8px;
+  background:transparent;border:1px solid var(--border-strong);color:var(--text-2);
+  font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0;align-self:center;
+  transition:all var(--d) var(--ease);
+}
+.rm-action .ra-apply:hover{background:var(--navy-800);color:#fff;border-color:transparent;}
+
+/* ─── Replay Strip ─── */
+.replay-strip{
+  display:flex;align-items:center;gap:12px;
+  margin:0 20px 14px;padding:10px 14px;
+  background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(46,125,209,.04));
+  border:1px solid rgba(124,58,237,.18);border-radius:12px;
+  position:relative;animation:tpFade .35s var(--ease-out);
+}
+.replay-strip.hidden{display:none;}
+.replay-strip .rp-play{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;
+  border:none;cursor:pointer;font-family:inherit;
+  box-shadow:0 6px 14px rgba(124,58,237,.30),inset 0 1px 0 rgba(255,255,255,.20);
+  transition:transform var(--d) var(--ease);
+}
+.replay-strip .rp-play:hover{transform:scale(1.06);}
+.replay-strip .rp-play svg{width:14px;height:14px;}
+.replay-strip .rp-info{flex:0 0 auto;min-width:140px;}
+.replay-strip .rp-lbl{font-size:9.5px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.replay-strip .rp-date{font-size:14px;font-weight:800;color:var(--navy-800);font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:1px;}
+.replay-strip .rp-track{
+  flex:1;position:relative;height:28px;display:flex;align-items:center;
+}
+.replay-strip input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:6px;background:transparent;cursor:pointer;
+}
+.replay-strip input[type=range]::-webkit-slider-runnable-track{
+  height:6px;border-radius:999px;
+  background:linear-gradient(90deg,rgba(15,23,42,.10),rgba(15,23,42,.06));
+}
+.replay-strip input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:18px;height:18px;border-radius:50%;margin-top:-6px;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);
+  border:2px solid #fff;cursor:grab;
+  box-shadow:0 4px 12px rgba(124,58,237,.40);
+}
+.replay-strip input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:rgba(15,23,42,.08);}
+.replay-strip input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#7c3aed);border:2px solid #fff;cursor:grab;box-shadow:0 4px 12px rgba(124,58,237,.40);}
+.replay-strip .rp-today-marker{
+  position:absolute;top:50%;width:2px;height:14px;
+  background:linear-gradient(180deg,#22d3ee,#7c3aed);
+  transform:translateY(-50%);pointer-events:none;
+  box-shadow:0 0 8px rgba(124,58,237,.40);
+}
+.replay-strip .rp-today-marker::before{
+  content:'HOY';position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  font-size:8.5px;font-weight:900;letter-spacing:.10em;color:#fff;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);
+  padding:1px 5px;border-radius:3px;white-space:nowrap;
+}
+.replay-strip .rp-actions{display:flex;gap:6px;flex-shrink:0;}
+.replay-strip .rp-btn{
+  height:28px;padding:0 11px;border-radius:7px;
+  background:rgba(255,255,255,.70);border:1px solid var(--border);
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--text-2);
+  cursor:pointer;font-family:inherit;
+  transition:all var(--d) var(--ease);
+}
+.replay-strip .rp-btn:hover{background:#fff;color:var(--text);}
+.replay-strip .rp-btn.exit{background:linear-gradient(135deg,var(--danger-2),var(--danger));color:#fff;border-color:transparent;}
+
+/* Cuando replay activo: aplicar overlay sutil al board */
+.gantt-board.replay-active::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:5;
+  border:2px solid rgba(124,58,237,.40);border-radius:10px;
+  box-shadow:inset 0 0 30px rgba(124,58,237,.10);
+  animation:replayPulse 2s ease-in-out infinite;
+}
+@keyframes replayPulse{0%,100%{opacity:.5;}50%{opacity:.9;}}
+
 /* Validation report (post-import) */
 .import-report{
   margin:0 20px 14px;
@@ -2744,6 +3004,11 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
             <button class="gtb-btn gtb-scale" data-scale="quarter" onclick="setGanttScale('quarter')">Trimestre</button>
           </div>
 
+          <button class="gtb-btn" onclick="enterReplay()" title="Rebobinar el proyecto en el tiempo" style="background:linear-gradient(135deg,rgba(34,211,238,.10),rgba(124,58,237,.06));color:var(--violet-600);font-weight:800;">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Replay
+          </button>
+
           <span class="gtb-tag">Filtro</span>
           <div class="gtb-group">
             <button class="gtb-btn gtb-filter active" data-filter="all" onclick="setGanttFilter('all')">Todas</button>
@@ -2761,6 +3026,28 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <div class="gtb-stat warn hidden" id="gst-crit"><span class="num">0</span> críticas</div>
           <div class="gtb-stat hidden" id="gst-hito"><span class="num">0</span> hitos</div>
           <div class="gtb-stat success hidden" id="gst-done"><span class="num">0</span> ✓</div>
+        </div>
+
+        <!-- ── Recovery Banner (aparece solo si hay problemas) ── -->
+        <div class="recovery-banner hidden" id="recovery-banner" onclick="openRecoveryModal()"></div>
+
+        <!-- ── Replay Strip (aparece al activar replay) ── -->
+        <div class="replay-strip hidden" id="replay-strip">
+          <button class="rp-play" id="rp-play-btn" onclick="replayTogglePlay()" title="Play / Pausa">
+            <svg id="rp-play-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <div class="rp-info">
+            <div class="rp-lbl">Replay · viendo</div>
+            <div class="rp-date" id="rp-date">—</div>
+          </div>
+          <div class="rp-track">
+            <input type="range" id="rp-range" min="0" max="100" value="100" step="1" oninput="replaySeek(this.value)">
+            <div class="rp-today-marker" id="rp-today-marker"></div>
+          </div>
+          <div class="rp-actions">
+            <button class="rp-btn" onclick="replayToHoy()">Hoy</button>
+            <button class="rp-btn exit" onclick="exitReplay()">Salir</button>
+          </div>
         </div>
 
         <!-- ── Capas operativas (overlays) ── -->
@@ -3068,6 +3355,26 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
   <aside class="eqd-modal" id="eqd-modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="eqd-head" id="eqd-head"></div>
     <div class="eqd-body" id="eqd-body"></div>
+  </aside>
+
+  <!-- ═══ MODAL RECOVERY MODE ═══ -->
+  <div class="rm-backdrop" id="rm-backdrop" onclick="closeRecoveryModal()"></div>
+  <aside class="rm-modal" id="rm-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="rm-head">
+      <div class="rm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="23 20 23 14 17 14"/></svg>
+      </div>
+      <div class="rm-meta">
+        <div class="lbl">Modo Recuperación · Plan de acción</div>
+        <div class="ttl" id="rm-title">Tu proyecto necesita atención</div>
+        <div class="sub" id="rm-sub">Análisis táctico de acciones para recuperar atrasos</div>
+      </div>
+      <button class="rm-close" onclick="closeRecoveryModal()" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="rm-summary" id="rm-summary"></div>
+    <div class="rm-body" id="rm-body"></div>
   </aside>
 
   <!-- ═══ MODAL PREVIEW IMPORT · AI Parsing Center ═══ -->
@@ -4426,6 +4733,403 @@ function cerrarEquipoDetail() {
   const modal = document.getElementById('eqd-modal');
   if (bg) bg.classList.remove('open');
   if (modal) { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4E · RECOVERY MODE (motor heurístico)
+// ═══════════════════════════════════════════════
+
+const _rmIcons = {
+  cuadrilla: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  extras:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
+  paralelo:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+  resec:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  reportar:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+  fasttrack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  cliente:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  desbloquear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'
+};
+
+// Detecta si hay problemas que ameriten Recovery Mode
+function recoveryDetectar() {
+  const all = _ganttState.tasks || [];
+  if (!all.length) return { activate:false };
+  const hoy = new Date().toISOString().slice(0,10);
+  const atrasadas = all.filter(t => parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base && t.fecha_fin_base < hoy);
+  const sinMov = all.filter(t => {
+    const a = getAnalysis(t);
+    return a.sinMovDias !== null && a.sinMovDias >= 5 && a.pct > 0 && a.pct < 100;
+  });
+  const critRiesgo = all.filter(t => t.es_critico && parseFloat(t.pct_avance||0) < 100 && (getAnalysis(t).salud === 'bad' || getAnalysis(t).salud === 'warn'));
+  // SPI global
+  const ctx = _dashCtx;
+  const spi = ctx && ctx.spi != null ? ctx.spi : null;
+  const severity = (spi != null && spi < 0.85) || atrasadas.length >= 5 || critRiesgo.length >= 2 ? 'critica' :
+                  (atrasadas.length > 0 || sinMov.length > 0 || critRiesgo.length > 0) ? 'warn' : 'ok';
+  return {
+    activate: severity !== 'ok',
+    severity, atrasadas, sinMov, critRiesgo, spi, total: all.length
+  };
+}
+
+// Banner visible si hay problemas
+function refreshRecoveryBanner() {
+  const det = recoveryDetectar();
+  const banner = document.getElementById('recovery-banner');
+  if (!banner) return;
+  if (!det.activate) { banner.classList.add('hidden'); return; }
+  banner.classList.remove('hidden');
+  banner.classList.toggle('severity-warn', det.severity === 'warn');
+  const sev = det.severity === 'critica' ? 'CRÍTICO' : 'ATENCIÓN';
+  const parts = [];
+  if (det.atrasadas.length > 0) parts.push(`${det.atrasadas.length} atrasadas`);
+  if (det.critRiesgo.length > 0) parts.push(`${det.critRiesgo.length} críticas en riesgo`);
+  if (det.sinMov.length > 0) parts.push(`${det.sinMov.length} sin movimiento`);
+  if (det.spi != null && det.spi < 0.96) parts.push(`SPI ${det.spi.toFixed(2)}`);
+  banner.innerHTML = `
+    <div class="rb-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="23 20 23 14 17 14"/></svg>
+    </div>
+    <div class="rb-content">
+      <div class="rb-tit">Tu proyecto requiere acción <span class="rb-badge">${sev}</span></div>
+      <div class="rb-desc">${parts.join(' · ') || 'Hay desviaciones que conviene corregir'}. Ver plan de recuperación recomendado.</div>
+    </div>
+    <button class="rb-cta">
+      Activar Modo Recuperación
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  `;
+}
+
+// Genera lista de acciones de recuperación rankeadas por impacto
+function recoveryGenerarAcciones(det) {
+  const acciones = [];
+  const all = _ganttState.tasks || [];
+
+  // 1) Cuadrilla por sub-categoría con más atrasadas
+  if (det.atrasadas.length >= 3) {
+    const porCat = {};
+    det.atrasadas.forEach(t => {
+      const c = t.categoria || autoDetectCategory(t.nombre_tarea, t.es_hito);
+      porCat[c] = (porCat[c]||0) + 1;
+    });
+    const topCat = Object.entries(porCat).sort((a,b) => b[1] - a[1])[0];
+    if (topCat && topCat[1] >= 2) {
+      const [cat, n] = topCat;
+      const avgDiasAtraso = det.atrasadas.filter(t => (t.categoria||autoDetectCategory(t.nombre_tarea,t.es_hito))===cat)
+        .reduce((s,t) => s + Math.max(1, Math.floor((Date.now() - new Date(t.fecha_fin_base))/86400000)), 0) / n;
+      const recDias = Math.max(2, Math.round(avgDiasAtraso * 0.5));
+      acciones.push({
+        cls:'critica', icon:_rmIcons.cuadrilla, score: 95,
+        title: `Aumentar cuadrilla en ${CAT_META[cat]?.label || cat}`,
+        desc: `${n} tareas atrasadas en esta categoría con ${avgDiasAtraso.toFixed(0)}d promedio de retraso. Incrementar +30% personal específico de esta especialidad.`,
+        recover: recDias, cost:'Alto', tasks:n
+      });
+    }
+  }
+
+  // 2) Horas extras para críticas en riesgo
+  if (det.critRiesgo.length > 0) {
+    const recDias = Math.max(2, Math.round(det.critRiesgo.length * 1.5));
+    acciones.push({
+      cls:'alta', icon:_rmIcons.extras, score: 80,
+      title:`Horas extras en ${det.critRiesgo.length} tarea${det.critRiesgo.length===1?'':'s'} crítica${det.critRiesgo.length===1?'':'s'}`,
+      desc:`Programar jornada extendida (+2h/día) y/o sábados para las actividades de ruta crítica con desviación. Aplicable solo a las del top de impacto.`,
+      recover: recDias, cost:'Medio', tasks:det.critRiesgo.length
+    });
+  }
+
+  // 3) Paralelizar pares de tareas críticas secuenciales
+  const critPares = [];
+  for (let i=0;i<all.length;i++) {
+    const a = all[i];
+    if (!a.es_critico || !a.fecha_fin_base) continue;
+    for (let j=0;j<all.length;j++) {
+      if (i===j) continue;
+      const b = all[j];
+      if (!b.es_critico || !b.fecha_inicio_base) continue;
+      const diff = (new Date(b.fecha_inicio_base) - new Date(a.fecha_fin_base)) / 86400000;
+      if (diff >= -1 && diff <= 3 && a.categoria === b.categoria) { critPares.push([a,b]); break; }
+    }
+    if (critPares.length >= 2) break;
+  }
+  if (critPares.length > 0) {
+    const par = critPares[0];
+    const dur = Math.max(2, Math.min(parseFloat(par[0].duracion_dias||5), parseFloat(par[1].duracion_dias||5)) * 0.4);
+    acciones.push({
+      cls:'alta', icon:_rmIcons.paralelo, score: 70,
+      title:'Paralelizar actividades secuenciales',
+      desc:`"${(par[0].nombre_tarea||'').slice(0,40)}" y "${(par[1].nombre_tarea||'').slice(0,40)}" pueden ejecutarse en paralelo si no hay dependencia técnica. Validar con ingeniería.`,
+      recover: Math.round(dur), cost:'Bajo', tasks:2
+    });
+  }
+
+  // 4) Desbloquear tareas sin movimiento
+  if (det.sinMov.length > 0) {
+    acciones.push({
+      cls:'media', icon:_rmIcons.desbloquear, score: 60,
+      title:`Investigar ${det.sinMov.length} tarea${det.sinMov.length===1?'':'s'} sin movimiento`,
+      desc:`Más de 5 días sin actualización. Posibles bloqueos: falta de materiales, permisos, supervisión, definición técnica. Reunión rápida 30min con responsables.`,
+      recover: Math.round(det.sinMov.length * 0.8), cost:'Bajo', tasks:det.sinMov.length
+    });
+  }
+
+  // 5) Re-secuenciar fase con mayor concentración de atrasos
+  const porFase = {};
+  det.atrasadas.forEach(t => { const f = t.fase || 'OTROS'; porFase[f] = (porFase[f]||0)+1; });
+  const topFase = Object.entries(porFase).sort((a,b) => b[1]-a[1])[0];
+  if (topFase && topFase[1] >= 3) {
+    acciones.push({
+      cls:'media', icon:_rmIcons.resec, score: 55,
+      title:`Re-secuenciar fase ${topFase[0]}`,
+      desc:`Esta fase concentra ${topFase[1]} tareas atrasadas. Replantear el orden interno permite arrancar entregables independientes antes y desbloquea ruta crítica.`,
+      recover: Math.max(3, topFase[1] * 1), cost:'Bajo', tasks:topFase[1]
+    });
+  }
+
+  // 6) Fast-track de licitaciones / compras pendientes
+  const compras = all.filter(t => (t.categoria === 'COMPRA' || t.categoria === 'LICITACION') && parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base);
+  const comprasAtras = compras.filter(t => t.fecha_fin_base < new Date().toISOString().slice(0,10));
+  if (comprasAtras.length > 0) {
+    acciones.push({
+      cls:'critica', icon:_rmIcons.fasttrack, score: 88,
+      title:`Fast-track de ${comprasAtras.length} compra${comprasAtras.length===1?'':'s'}/licitacion${comprasAtras.length===1?'es':'es'}`,
+      desc:`Compras atrasadas bloquean instalación en cadena. Escalar a procura y/o cambiar proveedor / origen para reducir lead time. Pedir vía aérea si justifica.`,
+      recover: Math.max(5, comprasAtras.length * 2), cost:'Alto', tasks:comprasAtras.length
+    });
+  }
+
+  // 7) Coordinación con cliente si hay >2 hitos en riesgo
+  const hitosRiesgo = all.filter(t => {
+    if (!t.es_hito || !t.fecha_fin_base) return false;
+    const a = getAnalysis(t);
+    return a.forecast && a.forecast.diasRetraso > 0 && parseFloat(t.pct_avance||0) < 100;
+  });
+  if (hitosRiesgo.length >= 2 || (det.spi != null && det.spi < 0.85)) {
+    acciones.push({
+      cls:'critica', icon:_rmIcons.cliente, score: 90,
+      title:'Comunicar al cliente · solicitar negociación de hitos',
+      desc:`Cuando el SPI < 0.85 o hay múltiples hitos en riesgo, conviene proactivamente alinear con el cliente: re-baseline, mover hitos no críticos, o pedir prórroga formal. Cuesta más resolverlo al final.`,
+      recover: 7, cost:'Bajo', tasks:hitosRiesgo.length
+    });
+  }
+
+  // 8) Actualizar reportes (catch-all menor impacto)
+  if (det.atrasadas.length > 0) {
+    acciones.push({
+      cls:'baja', icon:_rmIcons.reportar, score: 30,
+      title:'Actualizar reporte diario hoy',
+      desc:`Mantén trazabilidad. El reporte diario alimenta los KPIs del dashboard y la curva S. Tomar 10 min puede revelar avances no registrados que mejoran el SPI.`,
+      recover: 1, cost:'Mínimo', tasks: 0
+    });
+  }
+
+  return acciones.sort((a,b) => b.score - a.score).slice(0, 6);
+}
+
+function openRecoveryModal() {
+  const det = recoveryDetectar();
+  if (!det.activate) { showToast('Sin problemas críticos · proyecto en buen estado', 2400, 'success'); return; }
+  const acciones = recoveryGenerarAcciones(det);
+  const totalRec = acciones.reduce((s,a) => s + (a.recover||0), 0);
+
+  document.getElementById('rm-title').textContent = det.severity === 'critica' ? 'Tu proyecto está en estado CRÍTICO' : 'Tu proyecto requiere atención';
+  document.getElementById('rm-sub').textContent = `Análisis táctico · ${acciones.length} acciones de recuperación propuestas`;
+
+  document.getElementById('rm-summary').innerHTML = `
+    <div class="rm-stat bad"><div class="lbl">Atrasadas</div><div class="val">${det.atrasadas.length}</div><div class="sub">tareas vencidas</div></div>
+    <div class="rm-stat warn"><div class="lbl">Sin movimiento</div><div class="val">${det.sinMov.length}</div><div class="sub">≥5d sin avance</div></div>
+    <div class="rm-stat ${det.critRiesgo.length>0?'bad':''}"><div class="lbl">Críticas en riesgo</div><div class="val">${det.critRiesgo.length}</div><div class="sub">ruta crítica</div></div>
+    <div class="rm-stat ${det.spi!=null&&det.spi<0.85?'bad':det.spi!=null&&det.spi<0.96?'warn':'good'}"><div class="lbl">SPI proyecto</div><div class="val">${det.spi!=null?det.spi.toFixed(2):'—'}</div><div class="sub">Schedule Perf.</div></div>
+    <div class="rm-stat good"><div class="lbl">Potencial recup.</div><div class="val">~${totalRec}d</div><div class="sub">si aplicas el plan</div></div>
+  `;
+
+  document.getElementById('rm-body').innerHTML = `
+    <div class="rm-section-tit"><span class="badge">${acciones.length}</span> Acciones recomendadas <span style="font-weight:600;color:var(--text-3);text-transform:none;letter-spacing:0">(ordenadas por impacto esperado)</span></div>
+    <div class="rm-actions">${acciones.map((a,i) => `
+      <div class="rm-action" data-cls="${a.cls}" style="animation-delay:${i*60}ms">
+        <div class="ra-icon">${a.icon}</div>
+        <div class="ra-body">
+          <div class="ra-tit">${a.title}</div>
+          <div class="ra-desc">${a.desc}</div>
+          <div class="ra-meta">
+            <span class="ra-chip recover">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>
+              Recupera ~${a.recover}d
+            </span>
+            <span class="ra-chip cost">Costo: ${a.cost}</span>
+            ${a.tasks>0 ? `<span class="ra-chip tasks">${a.tasks} tarea${a.tasks===1?'':'s'} afectada${a.tasks===1?'':'s'}</span>` : ''}
+          </div>
+        </div>
+        <button class="ra-apply" onclick="rmMarkApplied(this)">Marcar aplicada</button>
+      </div>`).join('')}</div>
+    <div style="font-size:10.5px;color:var(--text-3);margin-top:14px;line-height:1.5;">
+      Las acciones son sugerencias heurísticas basadas en el estado actual del cronograma. Validar viabilidad técnica antes de aplicar. La recuperación estimada asume implementación inmediata y completa.
+    </div>
+  `;
+
+  document.getElementById('rm-backdrop').classList.add('open');
+  const m = document.getElementById('rm-modal');
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+}
+
+function closeRecoveryModal() {
+  document.getElementById('rm-backdrop').classList.remove('open');
+  const m = document.getElementById('rm-modal');
+  m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+}
+
+function rmMarkApplied(btn) {
+  btn.textContent = '✓ Aplicada';
+  btn.style.background = 'linear-gradient(135deg,var(--success-2),var(--success))';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'transparent';
+  btn.disabled = true;
+  showToast('Acción marcada como aplicada', 2000, 'success');
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4E · REPLAY TEMPORAL
+// ═══════════════════════════════════════════════
+
+const _replayState = {
+  active: false,
+  startDate: null,
+  endDate: null,        // hoy
+  currentDate: null,
+  playing: false,
+  playInterval: null,
+  snapshotTasks: null   // backup de _ganttState.tasks original
+};
+
+function enterReplay() {
+  const all = _ganttState.tasks || [];
+  if (!all.length) { showToast('Sin tareas para replay', 2400, 'warn'); return; }
+
+  // Calcular rango
+  let minD = null;
+  all.forEach(t => {
+    if (t.fecha_inicio_base) {
+      const d = new Date(t.fecha_inicio_base);
+      if (!minD || d < minD) minD = d;
+    }
+  });
+  if (!minD) { showToast('Sin fechas en el cronograma', 2400, 'warn'); return; }
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  _replayState.startDate = minD;
+  _replayState.endDate = hoy;
+  _replayState.currentDate = hoy;
+  _replayState.active = true;
+  _replayState.snapshotTasks = JSON.parse(JSON.stringify(all)); // deep copy
+
+  // Mostrar strip + indicador en board
+  document.getElementById('replay-strip').classList.remove('hidden');
+  document.getElementById('gantt-board').classList.add('replay-active');
+
+  // Posicionar marker HOY al final del slider (es siempre el extremo derecho)
+  document.getElementById('rp-today-marker').style.left = '100%';
+  document.getElementById('rp-range').value = 100;
+
+  replayUpdateDateLabel();
+  showToast('🎬 Modo Replay activado — arrastra el slider para rebobinar', 3200, 'info');
+}
+
+function exitReplay() {
+  _replayState.active = false;
+  if (_replayState.playInterval) { clearInterval(_replayState.playInterval); _replayState.playInterval = null; }
+  _replayState.playing = false;
+  // Restaurar tareas
+  if (_replayState.snapshotTasks) {
+    _ganttState.tasks = _replayState.snapshotTasks;
+    _replayState.snapshotTasks = null;
+  }
+  document.getElementById('replay-strip').classList.add('hidden');
+  document.getElementById('gantt-board').classList.remove('replay-active');
+  renderGanttBoard();
+  renderCategoryDashboard();
+  renderGanttSubtabs();
+  showToast('Replay finalizado · datos actuales restaurados', 2400, 'success');
+}
+
+function replayToHoy() {
+  if (!_replayState.active) return;
+  _replayState.currentDate = new Date(_replayState.endDate);
+  document.getElementById('rp-range').value = 100;
+  replayApplyState();
+}
+
+function replaySeek(value) {
+  if (!_replayState.active) return;
+  const pct = parseFloat(value) / 100;
+  const span = _replayState.endDate - _replayState.startDate;
+  _replayState.currentDate = new Date(_replayState.startDate.getTime() + span * pct);
+  replayApplyState();
+}
+
+function replayTogglePlay() {
+  if (!_replayState.active) return;
+  _replayState.playing = !_replayState.playing;
+  const ic = document.getElementById('rp-play-icon');
+  if (_replayState.playing) {
+    ic.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    _replayState.playInterval = setInterval(() => {
+      const r = document.getElementById('rp-range');
+      let v = parseFloat(r.value) + 1.2;
+      if (v >= 100) { v = 100; replayTogglePlay(); }
+      r.value = v;
+      replaySeek(v);
+    }, 90);
+  } else {
+    ic.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    if (_replayState.playInterval) { clearInterval(_replayState.playInterval); _replayState.playInterval = null; }
+  }
+}
+
+function replayUpdateDateLabel() {
+  const d = _replayState.currentDate;
+  if (!d) return;
+  document.getElementById('rp-date').textContent = _fmtFechaES(d);
+}
+
+// Recalcula pct sintético de cada tarea al date X
+function replayApplyState() {
+  if (!_replayState.active) return;
+  const X = _replayState.currentDate;
+  if (!X) return;
+  const Xtime = X.getTime();
+
+  // Construir tareas sintéticas
+  const synth = (_replayState.snapshotTasks || []).map(orig => {
+    const t = { ...orig };
+    const pctActual = parseFloat(orig.pct_avance||0);
+    if (!t.fecha_inicio_base || !t.fecha_fin_base) {
+      t.pct_avance = (Xtime >= Date.now()) ? pctActual : 0;
+      return t;
+    }
+    const ini = new Date(t.fecha_inicio_base).getTime();
+    const fin = new Date(t.fecha_fin_base).getTime();
+    if (Xtime < ini) {
+      t.pct_avance = 0;
+      t.cumplido = false;
+    } else if (Xtime >= Date.now()) {
+      // futuro → estado actual
+      t.pct_avance = pctActual;
+    } else {
+      // Interpolación lineal entre ini y hoy, escalada al pct actual
+      const totalSpan = Math.max(1, Date.now() - ini);
+      const upToX = Math.max(0, Xtime - ini);
+      const ratio = Math.min(1, upToX / totalSpan);
+      t.pct_avance = pctActual * ratio;
+      if (Xtime < fin) t.cumplido = false;
+    }
+    return t;
+  });
+
+  _ganttState.tasks = synth;
+  replayUpdateDateLabel();
+  renderGanttBoard();
+  renderCategoryDashboard();
 }
 
 // Renderiza el panel de Equipos PMO (reusable para Dashboard y Gantt)
@@ -6374,6 +7078,7 @@ function renderGanttBoard() {
 
   updateGanttStats(all);
   renderGanttAlerts();
+  refreshRecoveryBanner();
 }
 
 // Helper para abrir el drill-down desde onclick inline
@@ -6392,6 +7097,8 @@ document.addEventListener('keydown', (e) => {
     if (modal && modal.classList.contains('open')) closeImportPreview();
     const eqd = document.getElementById('eqd-modal');
     if (eqd && eqd.classList.contains('open')) cerrarEquipoDetail();
+    const rm = document.getElementById('rm-modal');
+    if (rm && rm.classList.contains('open')) closeRecoveryModal();
   }
 });
 
