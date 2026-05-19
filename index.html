@@ -1449,6 +1449,679 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
   .task-panel{width:100vw;max-width:none;}
 }
 
+/* ════════════════════════════════════════════════
+   PHASE 4B · GANTT V2 · MOTOR OPERATIVO CINEMATOGRÁFICO
+   ════════════════════════════════════════════════ */
+
+/* ─── Category Dashboard (top cards) ─── */
+.gantt-cat-dash{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;padding:18px 20px 6px;
+}
+.gantt-cat-card{
+  position:relative;
+  display:flex;flex-direction:column;gap:8px;
+  padding:16px 18px 14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.65));
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+  border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 8px 20px rgba(15,23,42,.05),0 1px 0 rgba(255,255,255,.6) inset;
+  cursor:pointer;text-align:left;font-family:inherit;color:inherit;
+  transition:transform var(--d) var(--ease),box-shadow var(--d) var(--ease),border-color var(--d) var(--ease);
+  overflow:hidden;
+}
+.gantt-cat-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle 200px at 100% 0%,var(--cat-glow,rgba(6,182,212,.10)),transparent 60%);
+  opacity:.7;pointer-events:none;
+}
+.gantt-cat-card::after{
+  content:'';position:absolute;inset:0;border-radius:16px;pointer-events:none;
+  background:linear-gradient(135deg,transparent 60%,var(--cat-glow,rgba(6,182,212,.06)));
+  opacity:0;transition:opacity var(--d) var(--ease);
+}
+.gantt-cat-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(15,23,42,.12),0 1px 0 rgba(255,255,255,.8) inset;border-color:var(--border-strong);}
+.gantt-cat-card:hover::after{opacity:1;}
+.gantt-cat-card.active{
+  border-color:var(--cat-color,var(--teal-500));
+  box-shadow:0 0 0 1px var(--cat-color,var(--teal-500)),0 18px 40px rgba(15,23,42,.10);
+}
+.gantt-cat-card.active::after{opacity:1;}
+
+.gcc-head{display:flex;align-items:center;gap:10px;}
+.gcc-icon{
+  width:34px;height:34px;border-radius:10px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--cat-color,var(--teal-500)),var(--cat-color-dark,var(--teal-700)));
+  color:#fff;flex-shrink:0;
+  box-shadow:0 4px 12px var(--cat-glow,rgba(6,182,212,.30)),inset 0 1px 0 rgba(255,255,255,.30);
+}
+.gcc-icon svg{width:17px;height:17px;}
+.gcc-tit{flex:1;min-width:0;}
+.gcc-name{font-size:10px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.gcc-sub{font-size:13px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;margin-top:1px;line-height:1.15;}
+.gcc-spark{height:18px;width:50px;flex-shrink:0;}
+
+.gcc-prog{
+  position:relative;height:8px;border-radius:5px;
+  background:rgba(15,23,42,.06);overflow:hidden;
+}
+.gcc-prog-fill{
+  position:absolute;left:0;top:0;bottom:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--cat-color,var(--teal-500)),var(--cat-color-dark,var(--teal-700)));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
+  transition:width 900ms var(--ease-out);
+}
+.gcc-prog-fill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.30) 50%,transparent 100%);
+  animation:gccShimmer 2.4s ease-in-out infinite;
+}
+@keyframes gccShimmer{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+
+.gcc-meta{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:11px;color:var(--text-2);
+}
+.gcc-meta .v{font-weight:800;color:var(--navy-800);font-variant-numeric:tabular-nums;}
+.gcc-pulse{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:800;letter-spacing:.04em;
+  padding:2px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--text-2);
+}
+.gcc-pulse .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.gcc-pulse.danger{background:var(--danger-bg);color:#991b1b;}
+.gcc-pulse.danger .dot{animation:gccPulse 1.2s infinite;background:var(--danger);}
+.gcc-pulse.warn{background:var(--warning-bg);color:#92400e;}
+.gcc-pulse.warn .dot{background:var(--warning);}
+.gcc-pulse.good{background:var(--success-bg);color:#166534;}
+.gcc-pulse.good .dot{background:var(--success);}
+@keyframes gccPulse{0%,100%{box-shadow:0 0 0 0 currentColor;}50%{box-shadow:0 0 0 4px transparent;}}
+
+/* Color schemes per category */
+.gantt-cat-card[data-cat="ALL"]{--cat-color:#0891B2;--cat-color-dark:#0E7490;--cat-glow:rgba(8,145,178,.22);}
+.gantt-cat-card[data-cat="PLANOS"]{--cat-color:#7c3aed;--cat-color-dark:#6d28d9;--cat-glow:rgba(124,58,237,.22);}
+.gantt-cat-card[data-cat="LICITACION"]{--cat-color:#2E7DD1;--cat-color-dark:#1d4ed8;--cat-glow:rgba(46,125,209,.22);}
+.gantt-cat-card[data-cat="COMPRA"]{--cat-color:#d97706;--cat-color-dark:#b45309;--cat-glow:rgba(217,119,6,.22);}
+.gantt-cat-card[data-cat="INSTALACION"]{--cat-color:#0891B2;--cat-color-dark:#0E7490;--cat-glow:rgba(8,145,178,.22);}
+.gantt-cat-card[data-cat="PRUEBAS"]{--cat-color:#16a34a;--cat-color-dark:#15803d;--cat-glow:rgba(22,163,74,.22);}
+.gantt-cat-card[data-cat="HITO"]{--cat-color:#f59e0b;--cat-color-dark:#d97706;--cat-glow:rgba(245,158,11,.22);}
+.gantt-cat-card[data-cat="CIERRE"]{--cat-color:#64748b;--cat-color-dark:#475569;--cat-glow:rgba(100,116,139,.22);}
+
+/* ─── Sub-tabs (categoría chips) ─── */
+.gantt-subtabs{
+  position:sticky;top:0;z-index:4;
+  display:flex;align-items:center;gap:4px;
+  padding:10px 20px 10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.65));
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;
+}
+.gantt-subtabs::-webkit-scrollbar{display:none;}
+.gst-chip{
+  position:relative;
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:999px;
+  background:rgba(255,255,255,.50);
+  border:1px solid var(--border);
+  color:var(--text-2);font-family:inherit;
+  font-size:12px;font-weight:700;letter-spacing:.02em;
+  cursor:pointer;transition:all var(--d) var(--ease);
+  flex-shrink:0;white-space:nowrap;
+}
+.gst-chip:hover{color:var(--text);background:#fff;border-color:var(--border-strong);transform:translateY(-1px);}
+.gst-chip .gst-ic{width:14px;height:14px;color:var(--cat-color,var(--text-2));}
+.gst-chip .gst-ic svg{width:14px;height:14px;}
+.gst-chip .gst-cnt{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:18px;padding:0 6px;border-radius:999px;
+  font-size:10px;font-weight:800;
+  background:var(--surface-2);color:var(--text-3);
+}
+.gst-chip.active{
+  background:linear-gradient(135deg,var(--cat-color,var(--teal-500)),var(--cat-color-dark,var(--teal-700)));
+  border-color:transparent;color:#fff;
+  box-shadow:0 6px 16px var(--cat-glow,rgba(6,182,212,.30)),inset 0 1px 0 rgba(255,255,255,.20);
+}
+.gst-chip.active .gst-ic{color:#fff;}
+.gst-chip.active .gst-cnt{background:rgba(255,255,255,.20);color:#fff;}
+.gst-chip[data-cat="PLANOS"]{--cat-color:#7c3aed;--cat-color-dark:#6d28d9;--cat-glow:rgba(124,58,237,.30);}
+.gst-chip[data-cat="LICITACION"]{--cat-color:#2E7DD1;--cat-color-dark:#1d4ed8;--cat-glow:rgba(46,125,209,.30);}
+.gst-chip[data-cat="COMPRA"]{--cat-color:#d97706;--cat-color-dark:#b45309;--cat-glow:rgba(217,119,6,.30);}
+.gst-chip[data-cat="INSTALACION"]{--cat-color:#0891B2;--cat-color-dark:#0E7490;--cat-glow:rgba(8,145,178,.30);}
+.gst-chip[data-cat="PRUEBAS"]{--cat-color:#16a34a;--cat-color-dark:#15803d;--cat-glow:rgba(22,163,74,.30);}
+.gst-chip[data-cat="HITO"]{--cat-color:#f59e0b;--cat-color-dark:#d97706;--cat-glow:rgba(245,158,11,.30);}
+.gst-chip[data-cat="CIERRE"]{--cat-color:#64748b;--cat-color-dark:#475569;--cat-glow:rgba(100,116,139,.30);}
+
+/* Sub-subcategoría (chips de segundo nivel) */
+.gantt-subsubtabs{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 20px;
+  background:rgba(247,249,253,.55);
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;
+}
+.gantt-subsubtabs::-webkit-scrollbar{display:none;}
+.gantt-subsubtabs .gst-ss-tag{
+  font-size:9.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--text-3);margin-right:4px;
+}
+.gss-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  height:26px;padding:0 11px;border-radius:8px;
+  background:#fff;border:1px solid var(--border);
+  color:var(--text-2);font-family:inherit;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all var(--d) var(--ease);
+  flex-shrink:0;white-space:nowrap;
+}
+.gss-chip:hover{color:var(--text);border-color:var(--border-strong);}
+.gss-chip.active{background:var(--navy-800);color:#fff;border-color:transparent;box-shadow:0 4px 10px rgba(11,23,57,.20);}
+.gss-add{background:transparent;border:1px dashed var(--border-strong);color:var(--text-3);}
+.gss-add:hover{border-color:var(--teal-500);color:var(--teal-700);background:rgba(6,182,212,.04);}
+
+/* ─── Tab body transition ─── */
+.gantt-board.fading{opacity:.35;transform:translateY(6px);}
+.gantt-board{transition:opacity var(--d) var(--ease),transform var(--d) var(--ease);}
+
+/* ─── Row 48px con barra de fondo gradient ─── */
+.gantt-board[data-row-h="48"] .gantt-row{
+  height:48px;
+  position:relative;overflow:hidden;
+}
+.gantt-board[data-row-h="48"] .gantt-row .row-bgfill{
+  position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--row-color,#0891B2) 14%,transparent),
+    color-mix(in srgb,var(--row-color,#0891B2) 4%,transparent) 95%,
+    transparent
+  );
+  pointer-events:none;
+  transition:width 700ms var(--ease-out);
+  z-index:0;
+}
+.gantt-board[data-row-h="48"] .gantt-row.lvl-1 .row-bgfill,
+.gantt-board[data-row-h="48"] .gantt-row.lvl-2 .row-bgfill{display:none;}
+
+.gantt-board[data-row-h="48"] .gantt-row > div{position:relative;z-index:1;}
+
+.gantt-board[data-row-h="48"] .gantt-row .gname{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;line-height:1.25;
+}
+.gantt-board[data-row-h="48"] .gantt-row .gname .nm-main{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.gantt-board[data-row-h="48"] .gantt-row .gname .nm-sub{
+  font-size:10.5px;color:var(--text-3);font-weight:600;
+  display:flex;align-items:center;gap:4px;
+}
+.gantt-board[data-row-h="48"] .gantt-row .gname .qty-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:999px;
+  font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--surface-2);color:var(--text-2);
+  border:1px solid var(--border);
+}
+.gantt-board[data-row-h="48"] .gantt-row .gname .qty-chip b{color:var(--navy-800);}
+.gantt-board[data-row-h="48"] .gantt-row .gname .qty-chip .u{color:var(--text-3);}
+
+/* Type badge inline (colorea según tipo de medición) */
+.tm-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 7px;border-radius:6px;flex-shrink:0;
+}
+.tm-badge[data-tm="cumplimiento"]{background:rgba(124,58,237,.10);color:var(--violet-600);}
+.tm-badge[data-tm="cantidad"]{background:rgba(8,145,178,.10);color:var(--teal-700);}
+.tm-badge[data-tm="checklist"]{background:rgba(22,163,74,.10);color:#166534;}
+.tm-badge[data-tm="pct_manual"]{background:rgba(46,125,209,.10);color:var(--brand-700);}
+
+/* Cumplimiento toggle inline */
+.cumpl-toggle{
+  display:inline-flex;align-items:center;gap:6px;
+  height:24px;padding:0 10px;border-radius:999px;
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;
+  background:var(--surface-2);border:1px solid var(--border);
+  color:var(--text-3);cursor:pointer;transition:all var(--d) var(--ease);
+  flex-shrink:0;
+}
+.cumpl-toggle:hover{transform:translateY(-1px);box-shadow:var(--sh-1);}
+.cumpl-toggle.si{background:var(--success-bg);color:#166534;border-color:rgba(22,163,74,.22);}
+.cumpl-toggle.no{background:#fff;color:var(--text-3);}
+
+/* Checklist mini */
+.cl-mini{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:var(--text-2);
+  font-variant-numeric:tabular-nums;
+}
+.cl-mini .cl-bar{
+  position:relative;width:50px;height:5px;border-radius:3px;
+  background:rgba(15,23,42,.06);overflow:hidden;
+}
+.cl-mini .cl-bar-fill{
+  position:absolute;left:0;top:0;bottom:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--success-2),var(--success));
+}
+
+/* ─── Toolbar compact-on-scroll ─── */
+.sec-card.gantt-card{contain:layout;}
+.gantt-toolbar.compact{
+  padding:8px 20px;gap:8px;
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  box-shadow:0 4px 18px rgba(15,23,42,.06);
+}
+.gantt-toolbar.compact .gtb-stat:not(.danger):not(.warn){display:none;}
+.gantt-toolbar.compact .gtb-tag{display:none;}
+
+/* ─── Stats pills with live sparklines ─── */
+.gtb-stat-live{
+  display:inline-flex;align-items:center;gap:8px;
+  height:30px;padding:0 12px;
+  font-size:11px;font-weight:700;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:999px;
+  color:var(--text-2);cursor:pointer;
+  transition:all var(--d) var(--ease);
+}
+.gtb-stat-live:hover{transform:translateY(-1px);box-shadow:var(--sh-2);background:#fff;}
+.gtb-stat-live .lv-num{font-weight:900;color:var(--navy-800);font-variant-numeric:tabular-nums;}
+.gtb-stat-live .lv-spark{height:16px;width:36px;opacity:.85;}
+.gtb-stat-live.danger{background:var(--danger-bg);color:#991b1b;border-color:rgba(220,38,38,.18);animation:liveBreath 1.6s ease-in-out infinite;}
+.gtb-stat-live.danger .lv-num{color:#991b1b;}
+.gtb-stat-live.warn{background:var(--warning-bg);color:#92400e;border-color:rgba(217,119,6,.18);}
+.gtb-stat-live.warn .lv-num{color:#92400e;}
+.gtb-stat-live.good{background:var(--success-bg);color:#166534;border-color:rgba(22,163,74,.18);}
+.gtb-stat-live.good .lv-num{color:#166534;}
+@keyframes liveBreath{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.20);}50%{box-shadow:0 0 0 4px transparent;}}
+
+/* ─── Row materialization ─── */
+.gantt-row.row-fresh{
+  animation:rowMat .56s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes rowMat{
+  0%{opacity:0;transform:translateY(8px);background:rgba(6,182,212,.10);}
+  60%{opacity:1;transform:translateY(0);background:rgba(6,182,212,.06);}
+  100%{opacity:1;background:transparent;}
+}
+
+/* ─── Ripple on action ─── */
+.ripple{
+  position:absolute;border-radius:50%;
+  background:rgba(34,211,238,.40);
+  transform:scale(0);
+  animation:ripple .6s var(--ease-out);
+  pointer-events:none;
+}
+@keyframes ripple{to{transform:scale(4);opacity:0;}}
+
+/* ─── Modal Preview Import (AI Parsing Center) ─── */
+.mp-backdrop{
+  position:fixed;inset:0;z-index:90;
+  background:linear-gradient(135deg,rgba(11,18,38,.55),rgba(124,58,237,.18));
+  backdrop-filter:blur(8px) saturate(140%);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity var(--d) var(--ease);
+}
+.mp-backdrop.open{opacity:1;pointer-events:auto;}
+.mp-modal{
+  position:fixed;left:50%;top:50%;z-index:91;
+  width:min(96vw,1200px);height:min(92vh,820px);
+  transform:translate(-50%,-50%) scale(.96);
+  background:var(--glass-strong);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid rgba(255,255,255,.40);
+  border-radius:20px;
+  box-shadow:0 40px 100px rgba(11,23,57,.30),0 1px 0 rgba(255,255,255,.6) inset;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--d) var(--ease-out),transform var(--d-slow) var(--ease-out);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.mp-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.mp-head{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 22px;
+  background:linear-gradient(135deg,rgba(46,125,209,.08),rgba(124,58,237,.06));
+  border-bottom:1px solid var(--border);
+}
+.mp-icon{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);
+  color:#fff;
+  box-shadow:0 10px 24px rgba(124,58,237,.30),inset 0 1px 0 rgba(255,255,255,.30);
+  position:relative;
+}
+.mp-icon::after{
+  content:'';position:absolute;inset:-4px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.18);
+  animation:ringPulse 2.6s ease-in-out infinite;
+}
+.mp-icon svg{width:22px;height:22px;}
+.mp-meta{flex:1;min-width:0;}
+.mp-meta .lbl{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);}
+.mp-meta .ttl{font-size:18px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;margin-top:1px;}
+.mp-meta .sub{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+.mp-close{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:rgba(15,23,42,.06);border:none;cursor:pointer;font-family:inherit;
+  color:var(--text-2);transition:all var(--d) var(--ease);
+}
+.mp-close:hover{background:var(--danger-bg);color:#991b1b;}
+.mp-close svg{width:16px;height:16px;}
+
+.mp-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 22px;border-bottom:1px solid var(--border);
+  background:rgba(247,249,253,.50);
+}
+.mp-search{
+  position:relative;flex:1;max-width:320px;
+}
+.mp-search input{
+  width:100%;height:34px;padding:0 12px 0 34px;
+  border:1px solid var(--border-strong);border-radius:10px;
+  background:#fff;font-size:12.5px;font-family:inherit;color:var(--text);outline:none;
+  transition:all var(--d) var(--ease);
+}
+.mp-search input:focus{border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(6,182,212,.16);}
+.mp-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3);}
+
+.mp-filt-group{display:inline-flex;align-items:center;gap:4px;background:#fff;padding:3px;border-radius:10px;border:1px solid var(--border);}
+.mp-filt{
+  height:26px;padding:0 11px;border-radius:7px;
+  background:transparent;border:none;
+  font-size:11px;font-weight:700;font-family:inherit;color:var(--text-2);
+  cursor:pointer;transition:all var(--d) var(--ease);
+}
+.mp-filt:hover{background:rgba(15,23,42,.04);}
+.mp-filt.active{background:var(--navy-800);color:#fff;}
+.mp-filt .ct{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:16px;padding:0 4px;margin-left:4px;border-radius:999px;
+  font-size:9.5px;font-weight:800;background:rgba(15,23,42,.06);color:var(--text-2);
+}
+.mp-filt.active .ct{background:rgba(255,255,255,.22);color:#fff;}
+
+.mp-bulk{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 12px;border-radius:8px;
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;
+  border:none;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.04em;
+  cursor:pointer;transition:all var(--d) var(--ease);
+  box-shadow:0 4px 12px rgba(124,58,237,.25);
+}
+.mp-bulk:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(124,58,237,.35);}
+.mp-bulk svg{width:13px;height:13px;}
+
+.mp-spacer{flex:1;}
+.mp-summary{
+  font-size:11px;color:var(--text-2);
+}
+.mp-summary b{color:var(--navy-800);font-weight:800;}
+
+.mp-body{flex:1;overflow-y:auto;padding:0;}
+.mp-body::-webkit-scrollbar{width:8px;}
+.mp-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px;}
+
+.mp-cat-group{
+  background:rgba(255,255,255,.60);
+  border-bottom:1px solid var(--border);
+}
+.mp-cat-header{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 22px;
+  background:linear-gradient(180deg,rgba(247,249,253,.85),rgba(247,249,253,.45));
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:2;
+  font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--navy-800);text-transform:uppercase;
+}
+.mp-cat-header .cat-ic{
+  width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--cat-color,var(--teal-500)),var(--cat-color-dark,var(--teal-700)));
+  color:#fff;
+}
+.mp-cat-header .cat-ic svg{width:13px;height:13px;}
+.mp-cat-header[data-cat="PLANOS"]{--cat-color:#7c3aed;--cat-color-dark:#6d28d9;}
+.mp-cat-header[data-cat="LICITACION"]{--cat-color:#2E7DD1;--cat-color-dark:#1d4ed8;}
+.mp-cat-header[data-cat="COMPRA"]{--cat-color:#d97706;--cat-color-dark:#b45309;}
+.mp-cat-header[data-cat="INSTALACION"]{--cat-color:#0891B2;--cat-color-dark:#0E7490;}
+.mp-cat-header[data-cat="PRUEBAS"]{--cat-color:#16a34a;--cat-color-dark:#15803d;}
+.mp-cat-header[data-cat="HITO"]{--cat-color:#f59e0b;--cat-color-dark:#d97706;}
+.mp-cat-header[data-cat="CIERRE"]{--cat-color:#64748b;--cat-color-dark:#475569;}
+.mp-cat-header .cnt{
+  margin-left:auto;font-weight:700;color:var(--text-3);letter-spacing:0;text-transform:none;font-size:11px;
+}
+.mp-cat-toggle{
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  background:rgba(15,23,42,.04);border:none;cursor:pointer;
+  color:var(--text-2);transition:all var(--d) var(--ease);
+}
+.mp-cat-toggle:hover{background:rgba(15,23,42,.08);}
+.mp-cat-toggle svg{width:13px;height:13px;transition:transform var(--d) var(--ease);}
+.mp-cat-group.collapsed .mp-cat-toggle svg{transform:rotate(-90deg);}
+.mp-cat-group.collapsed .mp-row{display:none;}
+
+.mp-row{
+  display:grid;
+  grid-template-columns:32px 1fr 130px 110px 70px 90px 80px 60px;
+  gap:8px;align-items:center;
+  padding:8px 22px;
+  border-bottom:1px solid var(--border);
+  font-size:11.5px;color:var(--text);
+  transition:background var(--d) var(--ease);
+}
+.mp-row:hover{background:rgba(6,182,212,.04);}
+.mp-row.dup{background:linear-gradient(90deg,rgba(245,158,11,.08),transparent 50%);}
+.mp-row.dup .mp-name::before{
+  content:'⚠';display:inline-block;color:var(--warning);margin-right:5px;font-weight:800;
+}
+.mp-row.invalid{background:linear-gradient(90deg,rgba(220,38,38,.06),transparent 50%);opacity:.60;}
+.mp-check{display:grid;place-items:center;}
+.mp-check input{
+  width:16px;height:16px;cursor:pointer;accent-color:var(--teal-600);
+}
+.mp-name{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mp-name.upper{text-transform:uppercase;font-weight:800;color:var(--navy-800);font-size:11px;}
+.mp-row select,.mp-row input{
+  height:28px;padding:0 8px;font-size:11px;font-family:inherit;color:var(--text);
+  background:#fff;border:1px solid var(--border);border-radius:7px;outline:none;width:100%;
+  transition:border-color var(--d) var(--ease);
+}
+.mp-row select:focus,.mp-row input:focus{border-color:var(--teal-500);box-shadow:0 0 0 2px rgba(6,182,212,.18);}
+.mp-row input.mp-qty{font-variant-numeric:tabular-nums;text-align:right;}
+.mp-row .mp-hito{display:grid;place-items:center;}
+.mp-hito-btn{
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  background:rgba(15,23,42,.04);border:none;cursor:pointer;color:var(--text-3);
+  transition:all var(--d) var(--ease);
+}
+.mp-hito-btn:hover{background:var(--warning-bg);color:#92400e;}
+.mp-hito-btn.on{background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;box-shadow:0 4px 8px rgba(217,119,6,.30);}
+
+.mp-foot{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 22px;
+  background:linear-gradient(180deg,rgba(247,249,253,0),rgba(247,249,253,.85));
+  border-top:1px solid var(--border);
+}
+.mp-foot .info{flex:1;font-size:12px;color:var(--text-2);}
+.mp-foot .info b{color:var(--navy-800);font-weight:800;}
+
+@media (max-width:768px){
+  .mp-row{grid-template-columns:28px 1fr 110px 100px 70px 60px;gap:6px;}
+  .mp-row > .mp-fecha-ini,.mp-row > .mp-fecha-fin{display:none;}
+}
+
+/* ─── Drill-down tabs internas ─── */
+.tp-tabs{
+  display:flex;gap:2px;
+  padding:8px 20px 0;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(247,249,253,.55),rgba(247,249,253,.30));
+  overflow-x:auto;scrollbar-width:none;
+}
+.tp-tabs::-webkit-scrollbar{display:none;}
+.tp-tab{
+  padding:8px 12px 10px;border:none;background:transparent;cursor:pointer;font-family:inherit;
+  font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--text-2);
+  border-bottom:2px solid transparent;
+  transition:color var(--d) var(--ease),border-color var(--d) var(--ease);
+  white-space:nowrap;display:inline-flex;align-items:center;gap:6px;
+}
+.tp-tab:hover{color:var(--text);}
+.tp-tab.active{color:var(--navy-800);font-weight:800;border-bottom-color:var(--teal-500);}
+.tp-tab .tp-tab-cnt{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:16px;padding:0 5px;border-radius:999px;
+  font-size:9px;font-weight:800;background:var(--surface-2);color:var(--text-3);
+}
+.tp-tab.active .tp-tab-cnt{background:var(--teal-500);color:#fff;}
+
+.tp-pane{display:none;animation:tpFade .32s var(--ease-out);}
+.tp-pane.active{display:block;}
+@keyframes tpFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+/* PMO equipment cards */
+.pmo-team{
+  display:flex;flex-direction:column;gap:10px;
+}
+.pmo-card{
+  display:flex;gap:10px;
+  padding:11px 13px;
+  background:linear-gradient(135deg,rgba(46,125,209,.06),rgba(8,145,178,.04));
+  border:1px solid rgba(46,125,209,.18);border-radius:11px;
+}
+.pmo-card .pmo-avatar{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--brand-500),var(--teal-600));
+  color:#fff;font-size:13px;font-weight:900;letter-spacing:-.01em;
+}
+.pmo-card .pmo-info{flex:1;min-width:0;}
+.pmo-card .pmo-name{font-size:12.5px;font-weight:800;color:var(--navy-800);}
+.pmo-card .pmo-meta{font-size:11px;color:var(--text-2);margin-top:2px;display:flex;flex-wrap:wrap;gap:6px 12px;}
+.pmo-card .pmo-meta b{color:var(--navy-700);font-weight:700;}
+.pmo-empty{font-size:11.5px;color:var(--text-3);padding:12px 0;text-align:center;}
+
+/* Histórico avance log */
+.av-log{display:flex;flex-direction:column;gap:8px;}
+.av-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 11px;background:rgba(255,255,255,.55);
+  border:1px solid var(--border);border-radius:10px;
+}
+.av-row .av-date{
+  font-size:10px;font-weight:800;color:var(--text-3);font-variant-numeric:tabular-nums;
+  min-width:54px;padding-top:2px;letter-spacing:.04em;
+}
+.av-row .av-content{flex:1;min-width:0;}
+.av-row .av-delta{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:800;color:var(--success);font-variant-numeric:tabular-nums;
+}
+.av-row .av-delta svg{width:11px;height:11px;}
+.av-row .av-delta.neg{color:var(--danger);}
+.av-row .av-nota{font-size:11.5px;color:var(--text-2);margin-top:3px;line-height:1.4;}
+.av-row .av-photo{
+  width:48px;height:48px;border-radius:8px;flex-shrink:0;object-fit:cover;
+  border:1px solid var(--border);cursor:pointer;
+}
+
+/* Productivity chart */
+.prod-chart{
+  position:relative;height:130px;
+  background:linear-gradient(180deg,rgba(238,242,251,.55),rgba(247,249,253,.30));
+  border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  margin-bottom:10px;
+}
+.prod-chart canvas{position:absolute;inset:0;width:100%;height:100%;}
+.prod-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.prod-stat{
+  padding:8px 11px;border-radius:9px;
+  background:rgba(255,255,255,.65);border:1px solid var(--border);
+}
+.prod-stat .lbl{font-size:9px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);}
+.prod-stat .val{font-size:15px;font-weight:900;color:var(--navy-800);font-variant-numeric:tabular-nums;margin-top:1px;}
+.prod-stat .sub{font-size:10px;color:var(--text-3);}
+
+/* Acción rápida */
+.quick-action{
+  background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(124,58,237,.04));
+  border:1px solid rgba(34,211,238,.20);border-radius:14px;
+  padding:14px;
+}
+.quick-action .qa-tit{
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--navy-800);margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.qa-grid.full{grid-template-columns:1fr;}
+.qa-field label{display:block;font-size:9.5px;font-weight:800;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:4px;}
+.qa-field input,.qa-field textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;
+  font-size:12px;font-family:inherit;color:var(--text);background:#fff;outline:none;
+  transition:border-color var(--d) var(--ease);
+}
+.qa-field input:focus,.qa-field textarea:focus{border-color:var(--teal-500);box-shadow:0 0 0 2px rgba(6,182,212,.16);}
+.qa-field textarea{min-height:54px;resize:vertical;}
+.qa-photo-zone{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border:2px dashed var(--border-strong);border-radius:10px;
+  background:rgba(255,255,255,.45);cursor:pointer;
+  transition:all var(--d) var(--ease);
+}
+.qa-photo-zone:hover,.qa-photo-zone.drag{border-color:var(--teal-500);background:rgba(6,182,212,.05);}
+.qa-photo-zone svg{width:18px;height:18px;color:var(--text-3);}
+.qa-photo-zone .txt{font-size:11px;color:var(--text-2);font-weight:600;}
+.qa-photo-zone .txt b{color:var(--navy-800);}
+.qa-photo-zone img{width:36px;height:36px;border-radius:6px;object-fit:cover;}
+.qa-submit{
+  width:100%;height:38px;margin-top:6px;
+  background:linear-gradient(135deg,#22d3ee,#0891B2,#2E7DD1);color:#fff;
+  border:none;border-radius:10px;font-family:inherit;
+  font-size:12px;font-weight:800;letter-spacing:.04em;cursor:pointer;
+  box-shadow:0 8px 18px rgba(8,145,178,.30),inset 0 1px 0 rgba(255,255,255,.20);
+  transition:all var(--d) var(--ease);position:relative;overflow:hidden;
+}
+.qa-submit:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(8,145,178,.40);}
+
+/* Empty patterns */
+.dim-loading{color:var(--text-3);font-size:11.5px;padding:14px;text-align:center;}
+
+/* ─── PMO Live Bridge pill ─── */
+.pmo-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  height:30px;padding:0 12px;
+  background:linear-gradient(135deg,rgba(46,125,209,.08),rgba(8,145,178,.06));
+  border:1px solid rgba(46,125,209,.18);border-radius:999px;
+  font-size:11px;font-weight:700;color:var(--brand-700);
+  cursor:pointer;transition:all var(--d) var(--ease);
+}
+.pmo-pill:hover{transform:translateY(-1px);box-shadow:var(--sh-2);}
+.pmo-pill .pmo-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--success-2);box-shadow:0 0 0 0 var(--success-2);
+  animation:pmoLive 2s ease-in-out infinite;
+}
+@keyframes pmoLive{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.40);}50%{box-shadow:0 0 0 5px transparent;}}
+.pmo-pill.syncing .pmo-dot{background:#f59e0b;animation:pmoLive 1s ease-in-out infinite;}
+.pmo-pill.error{background:var(--danger-bg);color:#991b1b;border-color:rgba(220,38,38,.20);}
+.pmo-pill.error .pmo-dot{background:var(--danger);animation:none;}
+.pmo-pill .pmo-label-meta{color:var(--text-3);font-weight:600;}
+.pmo-pill svg.refresh-ic{width:11px;height:11px;opacity:.65;transition:transform var(--d) var(--ease);}
+.pmo-pill:hover svg.refresh-ic{transform:rotate(180deg);opacity:1;}
+
+/* Lift max-height del board para que se pueda ver TODO */
+.gantt-board{max-height:none!important;}
+
 /* Validation report (post-import) */
 .import-report{
   margin:0 20px 14px;
@@ -1723,13 +2396,29 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
       </div>
     </div>
 
-    <!-- ══ GANTT · PROFESIONAL ══ -->
+    <!-- ══ GANTT · MOTOR OPERATIVO V2 ══ -->
     <div class="tab-content" id="tab-gantt">
-      <div class="sec-card">
+      <div class="sec-card gantt-card">
         <div class="sec-head">
-          <span class="sec-title">Cronograma del proyecto</span>
+          <span class="sec-title">Cronograma operativo</span>
+          <!-- PMO Live Bridge indicator -->
+          <div class="pmo-pill" id="pmo-pill" onclick="syncPMO(true)" title="Sincroniza con Centro de Control PMO">
+            <span class="pmo-dot"></span>
+            <span><b>PMO</b> · <span class="pmo-label-meta" id="pmo-label">conectando…</span></span>
+            <svg class="refresh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="confirmarLimpiarGantt()" title="Borrar todo el cronograma del proyecto actual">Limpiar</button>
           <button class="btn btn-primary btn-sm" onclick="mostrarFormGantt()">+ Tarea</button>
         </div>
+
+        <!-- ─── Dashboard de Categorías (cards top) ─── -->
+        <div class="gantt-cat-dash" id="gantt-cat-dash"></div>
+
+        <!-- ─── Sub-tabs por categoría ─── -->
+        <div class="gantt-subtabs" id="gantt-subtabs"></div>
+
+        <!-- ─── Sub-subtabs (especialidades dentro de INSTALACION) ─── -->
+        <div class="gantt-subsubtabs hidden" id="gantt-subsubtabs"></div>
 
         <!-- ── Toolbar: vistas + filtros + stats ── -->
         <div class="gantt-toolbar">
@@ -2059,6 +2748,82 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
   </div><!-- /main-wrap -->
 
+  <!-- ═══ MODAL PREVIEW IMPORT · AI Parsing Center ═══ -->
+  <div class="mp-backdrop" id="mp-backdrop" onclick="closeImportPreview()"></div>
+  <div class="mp-modal" id="mp-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="mp-head">
+      <div class="mp-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v6m0 8v6M2 12h6m8 0h6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/>
+        </svg>
+      </div>
+      <div class="mp-meta">
+        <div class="lbl">AI Parsing Center · Revisar antes de importar</div>
+        <div class="ttl" id="mp-file-name">Archivo</div>
+        <div class="sub" id="mp-detect">Detectando estructura…</div>
+      </div>
+      <button class="mp-close" onclick="closeImportPreview()" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="mp-toolbar">
+      <div class="mp-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="mp-search-input" placeholder="Buscar tarea por nombre…" oninput="mpRender()">
+      </div>
+      <div class="mp-filt-group">
+        <button class="mp-filt active" data-filt="all" onclick="mpSetFilter('all')">Todas <span class="ct" id="mp-cnt-all">0</span></button>
+        <button class="mp-filt" data-filt="dup" onclick="mpSetFilter('dup')">⚠ Duplicadas <span class="ct" id="mp-cnt-dup">0</span></button>
+        <button class="mp-filt" data-filt="nodate" onclick="mpSetFilter('nodate')">Sin fechas <span class="ct" id="mp-cnt-nodate">0</span></button>
+        <button class="mp-filt" data-filt="hito" onclick="mpSetFilter('hito')">◆ Hitos <span class="ct" id="mp-cnt-hito">0</span></button>
+      </div>
+      <select id="mp-bulk-sel" style="height:28px;padding:0 10px;font-size:11px;font-family:inherit;background:#fff;border:1px solid var(--border);border-radius:8px;cursor:pointer;outline:none;">
+        <option value="">Acción masiva en seleccionadas…</option>
+        <optgroup label="Asignar categoría a seleccionadas">
+          <option value="cat:PLANOS">Categoría → PLANOS</option>
+          <option value="cat:LICITACION">Categoría → LICITACIÓN</option>
+          <option value="cat:COMPRA">Categoría → COMPRA</option>
+          <option value="cat:INSTALACION">Categoría → INSTALACIÓN</option>
+          <option value="cat:PRUEBAS">Categoría → PRUEBAS</option>
+          <option value="cat:HITO">Categoría → HITO</option>
+          <option value="cat:CIERRE">Categoría → CIERRE</option>
+        </optgroup>
+        <optgroup label="Asignar tipo de medición">
+          <option value="tm:cumplimiento">Tipo → Cumplimiento Sí/No</option>
+          <option value="tm:cantidad">Tipo → Cantidad + Unidad</option>
+          <option value="tm:pct_manual">Tipo → % manual</option>
+          <option value="tm:checklist">Tipo → Checklist n/N</option>
+        </optgroup>
+        <optgroup label="Selección">
+          <option value="check:all">Marcar todas</option>
+          <option value="check:none">Desmarcar todas</option>
+          <option value="check:invert">Invertir selección</option>
+        </optgroup>
+      </select>
+      <button class="mp-bulk" onclick="mpApplyBulk()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></svg>
+        Aplicar
+      </button>
+      <div class="mp-spacer"></div>
+      <div class="mp-summary" id="mp-summary"><b>0</b> seleccionadas de <b>0</b></div>
+    </div>
+
+    <div class="mp-body" id="mp-body"></div>
+
+    <div class="mp-foot">
+      <div class="info">
+        <b>Modo:</b>
+        <select id="mp-mode-sel" style="height:28px;padding:0 8px;font-size:11.5px;font-family:inherit;background:#fff;border:1px solid var(--border-strong);border-radius:7px;margin-left:6px;cursor:pointer;outline:none;">
+          <option value="append">Agregar al cronograma existente</option>
+          <option value="replace">Reemplazar todo el cronograma del proyecto</option>
+        </select>
+      </div>
+      <button class="btn btn-outline" onclick="closeImportPreview()">Cancelar</button>
+      <button class="btn btn-teal" onclick="commitImportPreview()" id="mp-commit-btn">Importar 0 tareas</button>
+    </div>
+  </div>
+
   <!-- ═══ TASK DRILL-DOWN PANEL ═══ -->
   <div class="task-panel-backdrop" id="task-panel-backdrop" onclick="cerrarTaskPanel()"></div>
   <aside class="task-panel" id="task-panel" aria-hidden="true">
@@ -2233,6 +2998,9 @@ async function iniciarApp() {
     if (el) el.value = hoy;
   });
   setSyncStatus('ok','Conectado');
+  // ── PMO Live Bridge: arrancar polling cada 60s ──
+  pmoFetchLive(true);
+  pmoStartPolling();
 }
 
 // Auto-login si hay token
@@ -2629,6 +3397,12 @@ async function cargarGantt() {
 
     _ganttState.tasks = rows || [];
 
+    // Auto-categorizar tareas viejas (importadas antes de Phase 4B) si no tienen categoría
+    (rows||[]).forEach(t => {
+      if (!t.categoria) t.categoria = autoDetectCategory(t.nombre_tarea, t.es_hito);
+      if (!t.tipo_medicion) t.tipo_medicion = autoDetectMedicion(t.nombre_tarea, t.categoria, t.es_hito);
+    });
+
     // ── Badge inteligente: atrasadas (danger) o críticas (warn) ──
     const hoyStr = new Date().toISOString().slice(0,10);
     const atrasadas = (rows||[]).filter(t => parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base && t.fecha_fin_base < hoyStr).length;
@@ -2637,6 +3411,9 @@ async function cargarGantt() {
     else if (criticas > 0) setBadgeFromData('gantt', criticas, 'warn');
     else setBadgeFromData('gantt', 0);
 
+    // Render top-level: dashboard de categorías + sub-tabs
+    renderCategoryDashboard();
+    renderGanttSubtabs();
     renderGanttBoard();
   } catch(e) {
     if (loadEl) loadEl.classList.add('hidden');
@@ -2687,6 +3464,45 @@ async function guardarTareaGantt() {
   } catch(e) {
     setSyncStatus('error','Error');
     showToast('Error al guardar tarea');
+  }
+}
+
+async function toggleCumplimiento(id, nuevoValor) {
+  if (!id) return;
+  setSyncStatus('syncing','Guardando…');
+  try {
+    const payload = {
+      cumplido: !!nuevoValor,
+      fecha_cumplido: nuevoValor ? new Date().toISOString().slice(0,10) : null,
+      pct_avance: nuevoValor ? 100 : 0,
+      updated_at: new Date().toISOString()
+    };
+    await sbFetch(`/rest/v1/tareas_gantt?id=eq.${id}`, {
+      method:'PATCH', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify(payload)
+    });
+    // Insertar en avance_log
+    const t = (_ganttState.tasks||[]).find(x => x.id === id);
+    await sbFetch('/rest/v1/avance_log', {
+      method:'POST', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        tarea_id: id,
+        cod_proyecto: currentProyecto?.cod || currentProyecto?.nombre,
+        fecha: new Date().toISOString().slice(0,10),
+        estado_cumplimiento: !!nuevoValor,
+        pct_resultante: nuevoValor ? 100 : 0,
+        pct_delta: (nuevoValor ? 100 : 0) - parseFloat(t?.pct_avance||0),
+        nota: nuevoValor ? 'Marcado como cumplido' : 'Desmarcado',
+        supervisor: currentUser?.nombre,
+        supervisor_email: currentUser?.email
+      })
+    }).catch(()=>{});
+    showToast(nuevoValor ? '✓ Cumplido registrado' : 'Marcado como pendiente', 2400, 'success');
+    setSyncStatus('ok','Guardado ✓');
+    await cargarGantt();
+  } catch(e) {
+    setSyncStatus('error','Error');
+    showToast('Error al actualizar: ' + e.message, 3500, 'error');
   }
 }
 
@@ -2952,6 +3768,594 @@ function ganttDrop(e) {
   if (file) importarGanttSmart(file);
 }
 
+// ═══════════════════════════════════════════════
+// PHASE 4B · PMO LIVE BRIDGE (fetch + parse + 60s polling)
+// ═══════════════════════════════════════════════
+
+const PMO_URL = 'https://kiamevi-source.github.io/friopacking-live/';
+const PMO_POLL_MS = 60_000;            // 60s tal como pediste
+const PMO_CACHE_TTL_MS = 60_000;
+
+const _pmoState = {
+  lastFetch: 0,
+  fetching: false,
+  projects: [],
+  equipos: [],
+  hash: '',
+  status: 'idle',                       // 'idle' | 'ok' | 'syncing' | 'error'
+  pollHandle: null,
+  subscribers: new Set()                // funciones que se llaman al actualizar
+};
+
+function _pmoHash(s) {
+  // FNV-1a rápido
+  let h = 2166136261 >>> 0;
+  for (let i=0;i<s.length;i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16);
+}
+
+function _setPmoPill(status, label) {
+  const pill = document.getElementById('pmo-pill');
+  const lbl  = document.getElementById('pmo-label');
+  if (!pill || !lbl) return;
+  pill.classList.remove('syncing','error');
+  if (status === 'syncing') pill.classList.add('syncing');
+  if (status === 'error')   pill.classList.add('error');
+  lbl.textContent = label;
+}
+
+async function pmoFetchLive(force = false) {
+  if (_pmoState.fetching) return _pmoState;
+  if (!force && (Date.now() - _pmoState.lastFetch) < PMO_CACHE_TTL_MS) return _pmoState;
+
+  _pmoState.fetching = true;
+  _pmoState.status = 'syncing';
+  _setPmoPill('syncing','sincronizando…');
+
+  try {
+    const r = await fetch(PMO_URL, { cache:'no-store' });
+    if (!r.ok) throw new Error('PMO HTTP ' + r.status);
+    const html = await r.text();
+
+    // Extraer arrays inline window.PROJECTS y window.EQUIPOS_CSV
+    const projMatch = html.match(/window\.PROJECTS\s*=\s*(\[[\s\S]*?\])\s*;/);
+    const eqMatch   = html.match(/window\.EQUIPOS_CSV\s*=\s*(\[[\s\S]*?\])\s*;/);
+
+    let projects = [], equipos = [];
+    if (projMatch) {
+      try { projects = JSON.parse(projMatch[1]); }
+      catch(e) { try { projects = Function('"use strict";return (' + projMatch[1] + ')')(); } catch(_) {} }
+    }
+    if (eqMatch) {
+      try { equipos = JSON.parse(eqMatch[1]); }
+      catch(e) { try { equipos = Function('"use strict";return (' + eqMatch[1] + ')')(); } catch(_) {} }
+    }
+
+    const hash = _pmoHash(JSON.stringify(projects) + '|' + JSON.stringify(equipos));
+    const changed = hash !== _pmoState.hash;
+    _pmoState.projects = projects;
+    _pmoState.equipos = equipos;
+    _pmoState.hash = hash;
+    _pmoState.lastFetch = Date.now();
+    _pmoState.status = 'ok';
+    _pmoState.fetching = false;
+
+    const time = new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+    _setPmoPill('ok', `${projects.length} proy · ${equipos.length} equipos · ${time}`);
+
+    if (changed) {
+      // Notificar suscriptores (drill-down, etc.)
+      _pmoState.subscribers.forEach(fn => { try { fn(_pmoState); } catch(e){} });
+      // Solo mostrar toast si NO es la primera carga
+      if (_pmoState.lastFetchPrev) {
+        showToast(`📡 PMO actualizado · ${projects.length} proyectos · ${equipos.length} equipos`, 3200, 'success');
+      }
+    }
+    _pmoState.lastFetchPrev = true;
+    return _pmoState;
+  } catch (e) {
+    _pmoState.fetching = false;
+    _pmoState.status = 'error';
+    _setPmoPill('error', 'sin conexión · reintentar');
+    console.error('PMO fetch error:', e);
+    return _pmoState;
+  }
+}
+
+function pmoStartPolling() {
+  if (_pmoState.pollHandle) clearInterval(_pmoState.pollHandle);
+  _pmoState.pollHandle = setInterval(() => pmoFetchLive(false), PMO_POLL_MS);
+}
+
+function syncPMO(forceRefresh) {
+  pmoFetchLive(true);
+}
+
+function pmoSubscribe(fn) {
+  _pmoState.subscribers.add(fn);
+  return () => _pmoState.subscribers.delete(fn);
+}
+
+// Buscar datos PMO del proyecto activo
+function pmoCurrentProject() {
+  if (!currentProyecto) return null;
+  const nm = (currentProyecto.nombre||'').toLowerCase();
+  return (_pmoState.projects||[]).find(p => (p.name||'').toLowerCase() === nm
+    || (p.name||'').toLowerCase().includes(nm) || nm.includes((p.name||'').toLowerCase()));
+}
+
+// Buscar equipos del proyecto activo en EQUIPOS_CSV
+function pmoCurrentEquipos() {
+  if (!currentProyecto) return [];
+  const nm = (currentProyecto.nombre||'').toLowerCase();
+  const cod = (currentProyecto.cod||'').toLowerCase();
+  return (_pmoState.equipos||[]).filter(e => {
+    const p = (e.proj_csv||'').toLowerCase();
+    return p === nm || p.includes(nm) || nm.includes(p) || (cod && p.includes(cod));
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4B · CATEGORÍAS y AUTO-DETECCIÓN
+// ═══════════════════════════════════════════════
+
+const CAT_META = {
+  ALL:         { label:'Todas',        icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>', defaultTM:null,            color:'#0891B2' },
+  PLANOS:      { label:'Planos',       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>', defaultTM:'cumplimiento', color:'#7c3aed' },
+  LICITACION:  { label:'Licitación',   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13V7a2 2 0 0 0-2-2h-8.6a2 2 0 0 1-1.6-.8L8.6 2.8A2 2 0 0 0 7 2H4a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h6"/><circle cx="18" cy="18" r="3"/><path d="m22 22-1.5-1.5"/></svg>', defaultTM:'cumplimiento', color:'#2E7DD1' },
+  COMPRA:      { label:'Compra',       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>', defaultTM:'cumplimiento', color:'#d97706' },
+  INSTALACION: { label:'Instalación',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>', defaultTM:'cantidad',     color:'#0891B2' },
+  PRUEBAS:     { label:'Pruebas',      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12 l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>',                defaultTM:'checklist',    color:'#16a34a' },
+  HITO:        { label:'Hitos',        icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"/></svg>',                                   defaultTM:'cumplimiento', color:'#f59e0b' },
+  CIERRE:      { label:'Cierre',       icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>', defaultTM:'checklist',    color:'#64748b' }
+};
+
+const UNIDADES = ['', 'und','m','ml','m²','m³','kg','ton','lt','hh','pz','pl','gl','%'];
+
+// Auto-detección de categoría por nombre de tarea
+function autoDetectCategory(nombre, isMilestone) {
+  const n = (nombre||'').toLowerCase().trim();
+  if (isMilestone) return 'HITO';
+  if (/^(plan|plano|diseño|dibujo|ingenier[ií]a|arquitectura|aprobaci[oó]n.*plano|revisi[oó]n.*plano)/i.test(n)) return 'PLANOS';
+  if (/^(licita|adjudica|cotizaci|propuesta econ|contratar|invitaci[oó]n a licitar)/i.test(n)) return 'LICITACION';
+  if (/^(import|compra|adquisici|pedido|orden de compra|recepcion|llegada|embarque|tr[áa]nsito)/i.test(n)) return 'COMPRA';
+  if (/^(prueba|test|inspecci|puesta en marcha|pem|verificaci[oó]n|comisionamiento|programaci[oó]n)/i.test(n)) return 'PRUEBAS';
+  if (/^(cierre|entrega|documentaci|recorrido|levantam|conclus)/i.test(n)) return 'CIERRE';
+  if (/^(instal|montaje|fabricaci|cableado|interconex|aislamient|soldadura|prefabricad|carga|conexionado|ensamblaje)/i.test(n)) return 'INSTALACION';
+  // Default por keyword en el medio
+  if (/\b(planos|plano|diseño)\b/i.test(n)) return 'PLANOS';
+  if (/\b(licitaci|adjudicaci)\b/i.test(n)) return 'LICITACION';
+  if (/\b(compra|importaci|tanque|compresor|condensador|enfriador|ventilador|intercambiador|panel|tuberia|valvula|material)\b/i.test(n)) return 'COMPRA';
+  if (/\b(prueba|test|pem)\b/i.test(n)) return 'PRUEBAS';
+  return 'INSTALACION';
+}
+
+function autoDetectMedicion(nombre, categoria, isMilestone) {
+  if (isMilestone) return 'cumplimiento';
+  const meta = CAT_META[categoria];
+  return (meta && meta.defaultTM) || 'pct_manual';
+}
+
+function autoDetectUnidad(nombre) {
+  const n = (nombre||'').toLowerCase();
+  if (/panel|aislamient|loza|loneria|losa|recubrimient/i.test(n)) return 'm²';
+  if (/tuber|cableado|bandeja/i.test(n)) return 'ml';
+  if (/v[áa]lvula|panel.*und|puerta|sensor|equipo/i.test(n)) return 'und';
+  if (/amoniaco|gl[ií]col|fluido|liquido/i.test(n)) return 'lt';
+  if (/personal|cuadrilla|hora/i.test(n)) return 'hh';
+  if (/plano/i.test(n)) return 'pl';
+  return '';
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4B · CATEGORY DASHBOARD + SUB-TABS
+// ═══════════════════════════════════════════════
+
+function _ganttCatBuckets() {
+  const map = {};
+  Object.keys(CAT_META).forEach(c => { if (c !== 'ALL') map[c] = []; });
+  (_ganttState.tasks||[]).forEach(t => {
+    const cat = t.categoria || autoDetectCategory(t.nombre_tarea, t.es_hito);
+    (map[cat] = map[cat] || []).push(t);
+  });
+  return map;
+}
+
+function _ganttCatStat(cat, list) {
+  const meta = CAT_META[cat];
+  const tm = meta ? meta.defaultTM : 'pct_manual';
+  const total = list.length;
+  let pct = 0, num = '0/0', subLabel = '';
+
+  if (tm === 'cumplimiento') {
+    const cumplidas = list.filter(t => t.cumplido === true || parseFloat(t.pct_avance||0) >= 100).length;
+    pct = total ? (cumplidas/total)*100 : 0;
+    num = `${cumplidas} / ${total}`;
+    subLabel = cat === 'PLANOS' ? 'aprobados' : cat === 'LICITACION' ? 'adjudicadas' : cat === 'COMPRA' ? 'recibidas' : cat === 'HITO' ? 'cumplidos' : 'completos';
+  } else if (tm === 'cantidad') {
+    const totQ = list.reduce((s,t) => s + (parseFloat(t.cantidad_total||0)), 0);
+    const exeQ = list.reduce((s,t) => s + (parseFloat(t.cantidad_ejecutada||0)), 0);
+    pct = totQ > 0 ? (exeQ/totQ)*100 : list.reduce((s,t)=>s+parseFloat(t.pct_avance||0),0) / Math.max(1,total);
+    if (totQ > 0) {
+      num = `${Math.round(exeQ)} / ${Math.round(totQ)}`;
+      // Unidad más común
+      const units = list.map(t=>t.unidad).filter(Boolean);
+      const u = units.length ? units.sort((a,b) => units.filter(x=>x===b).length - units.filter(x=>x===a).length)[0] : '';
+      if (u) num += ` ${u}`;
+    } else {
+      num = `${total} tareas`;
+    }
+    subLabel = 'avance';
+  } else if (tm === 'checklist') {
+    const done = list.filter(t => parseFloat(t.pct_avance||0) >= 100).length;
+    pct = total ? (done/total)*100 : 0;
+    num = `${done} / ${total}`;
+    subLabel = 'completos';
+  } else {
+    // pct_manual mix
+    pct = total ? list.reduce((s,t)=>s+parseFloat(t.pct_avance||0),0) / total : 0;
+    num = `${total} tareas`;
+    subLabel = 'avance promedio';
+  }
+
+  // alertas
+  const hoy = new Date().toISOString().slice(0,10);
+  const atrasadas = list.filter(t => parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base && t.fecha_fin_base < hoy).length;
+  const criticas  = list.filter(t => t.es_critico).length;
+  let pulse = null;
+  if (atrasadas > 0) pulse = { tone:'danger', label:`${atrasadas} atrasada${atrasadas===1?'':'s'}` };
+  else if (criticas > 0) pulse = { tone:'warn',   label:`${criticas} críticas` };
+  else if (total > 0 && pct >= 95) pulse = { tone:'good', label:'al día' };
+
+  return { total, pct: Math.min(100, Math.max(0, pct)), num, subLabel, pulse };
+}
+
+function renderCategoryDashboard() {
+  const el = document.getElementById('gantt-cat-dash');
+  if (!el) return;
+  const all = _ganttState.tasks || [];
+  const buckets = _ganttCatBuckets();
+  const cats = ['ALL','PLANOS','LICITACION','COMPRA','INSTALACION','PRUEBAS','HITO','CIERRE'];
+  const allStat = _ganttCatStat('ALL', all);
+
+  el.innerHTML = cats.map(cat => {
+    const meta = CAT_META[cat];
+    const list = cat === 'ALL' ? all : (buckets[cat] || []);
+    if (cat !== 'ALL' && list.length === 0) return '';  // omitir si vacía
+    const st = cat === 'ALL' ? allStat : _ganttCatStat(cat, list);
+    const isActive = (_ganttState.categoria || 'ALL') === cat;
+    const sparkVals = list.slice(0, 8).map(t => parseFloat(t.pct_avance||0));
+    return `<button type="button" class="gantt-cat-card ${isActive?'active':''}" data-cat="${cat}" onclick="setGanttCategoria('${cat}')">
+      <div class="gcc-head">
+        <span class="gcc-icon">${meta.icon}</span>
+        <div class="gcc-tit">
+          <div class="gcc-name">${meta.label}</div>
+          <div class="gcc-sub">${st.num}</div>
+        </div>
+        <div class="gcc-spark">${sparklineSVG(sparkVals, {w:50, h:18, stroke:meta.color})}</div>
+      </div>
+      <div class="gcc-prog"><div class="gcc-prog-fill" style="width:${st.pct}%"></div></div>
+      <div class="gcc-meta">
+        <span><span class="v">${st.pct.toFixed(0)}%</span> ${st.subLabel}</span>
+        ${st.pulse ? `<span class="gcc-pulse ${st.pulse.tone}"><span class="dot"></span>${st.pulse.label}</span>` : ''}
+      </div>
+    </button>`;
+  }).filter(Boolean).join('');
+}
+
+function renderGanttSubtabs() {
+  const el = document.getElementById('gantt-subtabs');
+  if (!el) return;
+  const all = _ganttState.tasks || [];
+  const buckets = _ganttCatBuckets();
+  const cats = ['ALL','PLANOS','LICITACION','COMPRA','INSTALACION','PRUEBAS','HITO','CIERRE'];
+  const active = _ganttState.categoria || 'ALL';
+  el.innerHTML = cats.map(cat => {
+    const meta = CAT_META[cat];
+    const list = cat === 'ALL' ? all : (buckets[cat] || []);
+    if (cat !== 'ALL' && list.length === 0) return '';
+    return `<button type="button" class="gst-chip ${active===cat?'active':''}" data-cat="${cat}" onclick="setGanttCategoria('${cat}')">
+      <span class="gst-ic">${meta.icon}</span>
+      <span>${meta.label}</span>
+      <span class="gst-cnt">${list.length}</span>
+    </button>`;
+  }).filter(Boolean).join('');
+}
+
+function setGanttCategoria(cat) {
+  _ganttState.categoria = cat;
+  // animación fade del board
+  const board = document.getElementById('gantt-board');
+  if (board) {
+    board.classList.add('fading');
+    setTimeout(() => board.classList.remove('fading'), 280);
+  }
+  renderCategoryDashboard();
+  renderGanttSubtabs();
+  renderGanttBoard();
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 4B · MODAL PREVIEW IMPORT · AI Parsing Center
+// ═══════════════════════════════════════════════
+
+const _mpState = {
+  open: false,
+  fileName: '',
+  rows: [],            // { idx, nombre, categoria, tipo_medicion, unidad, cantidad_total, es_hito, fecha_ini, fecha_fin, dur, pct, nivel, isDup, isInvalid, isChecked }
+  filter: 'all',
+  search: ''
+};
+
+function openImportPreview(parsed, fileName, existingTasks) {
+  // construir filas con auto-detección + detección de duplicados
+  const existingByName = new Map();
+  (existingTasks || _ganttState.tasks || []).forEach(t => {
+    existingByName.set((t.nombre_tarea||'').toLowerCase().trim(), t);
+  });
+  const seenInParsed = new Map();
+
+  _mpState.rows = parsed.map((t, i) => {
+    const cat = autoDetectCategory(t.nombre, t.es_hito);
+    const tm  = autoDetectMedicion(t.nombre, cat, t.es_hito);
+    const u   = autoDetectUnidad(t.nombre);
+    const nameKey = (t.nombre||'').toLowerCase().trim();
+    const dupExist = existingByName.has(nameKey);
+    const dupSelf  = seenInParsed.has(nameKey);
+    const isDup = dupExist || dupSelf;
+    if (!dupSelf) seenInParsed.set(nameKey, i);
+    const invalid = !t.fecha_ini && !t.fecha_fin;
+    return {
+      idx: i,
+      nombre: t.nombre,
+      categoria: cat,
+      tipo_medicion: tm,
+      unidad: u,
+      cantidad_total: '',
+      es_hito: !!t.es_hito,
+      es_critico: !!t.es_critico,
+      fecha_ini: t.fecha_ini || '',
+      fecha_fin: t.fecha_fin || '',
+      dur: t.duracion_dias,
+      pct: t.pct_avance || 0,
+      nivel: t.nivel || 3,
+      responsable: t.responsable || '',
+      isDup, isInvalid: invalid,
+      isChecked: !isDup && !invalid    // por default: no-duplicada y con fechas
+    };
+  });
+
+  _mpState.fileName = fileName;
+  _mpState.filter = 'all';
+  _mpState.search = '';
+  _mpState.open = true;
+
+  // Set headers
+  document.getElementById('mp-file-name').textContent = fileName;
+  const totales = _mpState.rows.length;
+  const cats = new Set(_mpState.rows.map(r => r.categoria));
+  const dups = _mpState.rows.filter(r => r.isDup).length;
+  document.getElementById('mp-detect').innerHTML = `<b>${totales}</b> tareas detectadas · ${cats.size} categorías · ${dups>0?`<span style="color:#92400e;font-weight:700">⚠ ${dups} duplicada${dups===1?'':'s'} detectada${dups===1?'':'s'}</span>`:'sin duplicados'}`;
+
+  document.getElementById('mp-search-input').value = '';
+  mpRender();
+
+  // abrir con animación
+  document.getElementById('mp-backdrop').classList.add('open');
+  const modal = document.getElementById('mp-modal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function closeImportPreview() {
+  _mpState.open = false;
+  document.getElementById('mp-backdrop').classList.remove('open');
+  const modal = document.getElementById('mp-modal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+}
+
+function mpSetFilter(f) {
+  _mpState.filter = f;
+  document.querySelectorAll('.mp-filt').forEach(b => b.classList.toggle('active', b.dataset.filt === f));
+  mpRender();
+}
+
+function mpFilteredRows() {
+  const s = (_mpState.search || document.getElementById('mp-search-input')?.value || '').toLowerCase();
+  return _mpState.rows.filter(r => {
+    if (_mpState.filter === 'dup'    && !r.isDup) return false;
+    if (_mpState.filter === 'nodate' && !r.isInvalid && (r.fecha_ini || r.fecha_fin)) return false;
+    if (_mpState.filter === 'hito'   && !r.es_hito) return false;
+    if (s && !r.nombre.toLowerCase().includes(s)) return false;
+    return true;
+  });
+}
+
+function mpRender() {
+  const body = document.getElementById('mp-body');
+  if (!body) return;
+  _mpState.search = document.getElementById('mp-search-input')?.value || '';
+
+  const filtered = mpFilteredRows();
+  // Agrupar por categoría
+  const byCat = {};
+  filtered.forEach(r => { (byCat[r.categoria] = byCat[r.categoria] || []).push(r); });
+  const catOrder = ['PLANOS','LICITACION','COMPRA','INSTALACION','PRUEBAS','HITO','CIERRE'];
+
+  body.innerHTML = catOrder.filter(c => byCat[c]).map(cat => {
+    const list = byCat[cat];
+    const meta = CAT_META[cat];
+    return `<div class="mp-cat-group" data-cat="${cat}">
+      <div class="mp-cat-header" data-cat="${cat}">
+        <span class="cat-ic">${meta.icon}</span>
+        <span>${meta.label}</span>
+        <span class="cnt">${list.length} tarea${list.length===1?'':'s'}</span>
+        <button class="mp-cat-toggle" onclick="mpToggleGroup('${cat}',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      ${list.map(r => mpRowHTML(r)).join('')}
+    </div>`;
+  }).join('');
+
+  // contar
+  const cnt = id => document.getElementById(id);
+  cnt('mp-cnt-all').textContent  = _mpState.rows.length;
+  cnt('mp-cnt-dup').textContent  = _mpState.rows.filter(r => r.isDup).length;
+  cnt('mp-cnt-nodate').textContent = _mpState.rows.filter(r => r.isInvalid).length;
+  cnt('mp-cnt-hito').textContent = _mpState.rows.filter(r => r.es_hito).length;
+
+  mpUpdateSummary();
+}
+
+function mpRowHTML(r) {
+  const cats = ['PLANOS','LICITACION','COMPRA','INSTALACION','PRUEBAS','HITO','CIERRE'];
+  const tms  = ['cumplimiento','cantidad','pct_manual','checklist'];
+  const tmLabels = { cumplimiento:'Sí/No', cantidad:'Cantidad', pct_manual:'% manual', checklist:'Checklist' };
+  const nameClass = (r.nombre === r.nombre.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(r.nombre)) ? 'upper' : '';
+  const showQty = r.tipo_medicion === 'cantidad';
+  return `<div class="mp-row ${r.isDup?'dup':''} ${r.isInvalid?'invalid':''}" data-i="${r.idx}">
+    <div class="mp-check"><input type="checkbox" ${r.isChecked?'checked':''} onchange="mpToggleRow(${r.idx}, this.checked)"></div>
+    <div class="mp-name ${nameClass}" title="${r.nombre.replace(/"/g,'&quot;')}">${r.nombre}</div>
+    <select onchange="mpUpdateRow(${r.idx},'categoria',this.value)">
+      ${cats.map(c => `<option value="${c}" ${r.categoria===c?'selected':''}>${CAT_META[c].label}</option>`).join('')}
+    </select>
+    <select onchange="mpUpdateRow(${r.idx},'tipo_medicion',this.value)">
+      ${tms.map(t => `<option value="${t}" ${r.tipo_medicion===t?'selected':''}>${tmLabels[t]}</option>`).join('')}
+    </select>
+    <select ${showQty?'':'disabled style="opacity:.4"'} onchange="mpUpdateRow(${r.idx},'unidad',this.value)">
+      ${UNIDADES.map(u => `<option value="${u}" ${r.unidad===u?'selected':''}>${u||'—'}</option>`).join('')}
+    </select>
+    <input type="number" class="mp-qty" placeholder="—" value="${r.cantidad_total||''}" ${showQty?'':'disabled style="opacity:.4"'} oninput="mpUpdateRow(${r.idx},'cantidad_total',this.value)">
+    <input type="date" class="mp-fecha-ini" value="${r.fecha_ini||''}" oninput="mpUpdateRow(${r.idx},'fecha_ini',this.value)">
+    <input type="date" class="mp-fecha-fin" value="${r.fecha_fin||''}" oninput="mpUpdateRow(${r.idx},'fecha_fin',this.value)">
+    <div class="mp-hito">
+      <button class="mp-hito-btn ${r.es_hito?'on':''}" onclick="mpUpdateRow(${r.idx},'es_hito',${!r.es_hito})" title="Marcar como hito">◆</button>
+    </div>
+  </div>`;
+}
+
+function mpToggleGroup(cat, btn) {
+  const grp = btn.closest('.mp-cat-group');
+  grp.classList.toggle('collapsed');
+}
+function mpToggleRow(idx, checked) {
+  const r = _mpState.rows.find(x => x.idx === idx);
+  if (r) r.isChecked = checked;
+  mpUpdateSummary();
+}
+function mpUpdateRow(idx, field, value) {
+  const r = _mpState.rows.find(x => x.idx === idx);
+  if (!r) return;
+  r[field] = value;
+  if (field === 'categoria') {
+    r.tipo_medicion = autoDetectMedicion(r.nombre, value, r.es_hito);
+    mpRender();
+  }
+  if (field === 'tipo_medicion') mpRender();
+  if (field === 'es_hito') mpRender();
+}
+function mpUpdateSummary() {
+  const sel = _mpState.rows.filter(r => r.isChecked).length;
+  const total = _mpState.rows.length;
+  document.getElementById('mp-summary').innerHTML = `<b>${sel}</b> seleccionadas de <b>${total}</b>`;
+  document.getElementById('mp-commit-btn').textContent = `Importar ${sel} tarea${sel===1?'':'s'}`;
+}
+
+function mpApplyBulk() {
+  const sel = document.getElementById('mp-bulk-sel');
+  const v = sel.value;
+  if (!v) return;
+  const selected = _mpState.rows.filter(r => r.isChecked);
+  const all = _mpState.rows;
+  if (v.startsWith('cat:'))   { const c = v.slice(4); selected.forEach(r => { r.categoria = c; r.tipo_medicion = autoDetectMedicion(r.nombre, c, r.es_hito); }); }
+  else if (v.startsWith('tm:')){ const t = v.slice(3); selected.forEach(r => r.tipo_medicion = t); }
+  else if (v === 'check:all')   all.forEach(r => r.isChecked = !r.isInvalid);
+  else if (v === 'check:none')  all.forEach(r => r.isChecked = false);
+  else if (v === 'check:invert') {
+    const filtered = mpFilteredRows();
+    filtered.forEach(r => r.isChecked = !r.isChecked);
+  }
+  sel.value = '';
+  mpRender();
+}
+
+async function commitImportPreview() {
+  const cod = currentProyecto?.cod || currentProyecto?.nombre;
+  if (!cod) { showToast('Selecciona un proyecto', 3000, 'warn'); return; }
+  const selected = _mpState.rows.filter(r => r.isChecked && !r.isInvalid);
+  if (selected.length === 0) { showToast('Selecciona al menos una tarea', 3000, 'warn'); return; }
+  const mode = document.getElementById('mp-mode-sel').value;
+
+  setSyncStatus('syncing','Importando…');
+  try {
+    // Reemplazo total: DELETE primero
+    if (mode === 'replace') {
+      await sbFetch(`/rest/v1/tareas_gantt?cod_proyecto=eq.${encodeURIComponent(cod)}`, {
+        method:'DELETE', headers:{'Prefer':'return=minimal'}
+      });
+    }
+
+    const payload = selected.map((r, idx) => ({
+      cod_proyecto: cod,
+      nombre_tarea: r.nombre,
+      nivel: r.nivel,
+      fase: r.categoria,
+      categoria: r.categoria,
+      tipo_medicion: r.tipo_medicion,
+      unidad: r.unidad || null,
+      cantidad_total: r.cantidad_total ? parseFloat(r.cantidad_total) : null,
+      cantidad_ejecutada: 0,
+      fecha_inicio_base: r.fecha_ini || null,
+      fecha_fin_base: r.fecha_fin || null,
+      duracion_dias: r.dur,
+      pct_avance: r.pct,
+      es_hito: r.es_hito,
+      es_critico: r.es_critico,
+      responsable: r.responsable || '',
+      orden: idx + 1
+    }));
+
+    await sbFetch('/rest/v1/tareas_gantt', {
+      method:'POST', headers:{'Prefer':'return=minimal'},
+      body: JSON.stringify(payload)
+    });
+
+    closeImportPreview();
+    showToast(`${selected.length} tareas importadas ✓`, 3200, 'success');
+    setSyncStatus('ok','Importado ✓');
+    setImportProgress(`<b>${selected.length} tareas</b> importadas con categorías y tipo de medición ✓`, 'success');
+    setTimeout(clearImportProgress, 4500);
+    await cargarGantt();
+  } catch (e) {
+    console.error('commit import:', e);
+    showToast('Error al importar: ' + (e.message||e), 4000, 'error');
+    setSyncStatus('error','Error');
+  }
+}
+
+// Limpiar todo el cronograma del proyecto
+async function confirmarLimpiarGantt() {
+  const cod = currentProyecto?.cod || currentProyecto?.nombre;
+  if (!cod) { showToast('Selecciona un proyecto', 3000, 'warn'); return; }
+  const total = (_ganttState.tasks||[]).length;
+  if (total === 0) { showToast('El cronograma ya está vacío', 2400, 'warn'); return; }
+  if (!confirm(`¿Eliminar las ${total} tareas del cronograma actual?\nEsta acción no se puede deshacer.`)) return;
+  setSyncStatus('syncing','Limpiando…');
+  try {
+    await sbFetch(`/rest/v1/tareas_gantt?cod_proyecto=eq.${encodeURIComponent(cod)}`, {
+      method:'DELETE', headers:{'Prefer':'return=minimal'}
+    });
+    showToast(`${total} tareas eliminadas ✓`, 2800, 'success');
+    setSyncStatus('ok','Limpio');
+    await cargarGantt();
+  } catch (e) {
+    showToast('Error al limpiar: ' + (e.message||e), 4000, 'error');
+    setSyncStatus('error','Error');
+  }
+}
+
 // ── Smart dispatcher ────────────────────────
 async function importarGantt(input) {
   const file = (input && input.files) ? input.files[0] : input;
@@ -2987,44 +4391,22 @@ async function importarGanttSmart(file) {
 
     if (!parsed.length) throw new Error('No se detectaron tareas en el archivo.');
 
-    // ── Validación pre-upload: filtrar fechas inversas, ordenar y reportar ──
+    // Filtrar fechas inversas (descarta) y reportar warnings
     const warns = validarImportadas(parsed);
     parsed = parsed.filter(t => {
       if (t.fecha_ini && t.fecha_fin && new Date(t.fecha_fin) < new Date(t.fecha_ini)) return false;
       return true;
     });
-    showImportReport(warns);
+    if (warns.length) showImportReport(warns);
 
     const fases   = parsed.filter(t => t.nivel === 1).length;
     const hitos   = parsed.filter(t => t.es_hito).length;
-    setImportProgress(`Detectadas <b>${parsed.length} tareas</b> · ${fases} fases · ${hitos} hitos. Subiendo a Supabase…`, 'info');
+    setImportProgress(`Detectadas <b>${parsed.length} tareas</b> · ${fases} fases · ${hitos} hitos. Abriendo preview…`, 'info');
+    setSyncStatus('ok', 'Preview');
 
-    const payload = parsed.map((t, idx) => ({
-      cod_proyecto: cod,
-      nombre_tarea: t.nombre,
-      nivel: t.nivel,
-      fase: t.fase || (t.nivel === 1 ? t.nombre : 'EJECUCIÓN'),
-      fecha_inicio_base: t.fecha_ini,
-      fecha_fin_base: t.fecha_fin,
-      duracion_dias: t.duracion_dias,
-      pct_avance: t.pct_avance,
-      es_hito: t.es_hito,
-      es_critico: t.es_critico,
-      responsable: t.responsable || '',
-      orden: idx + 1
-    }));
-
-    await sbFetch('/rest/v1/tareas_gantt', {
-      method:'POST', headers:{'Prefer':'return=minimal'},
-      body: JSON.stringify(payload)
-    });
-
-    setImportProgress(`<b>${parsed.length} tareas</b> importadas · ${fases} fases · ${hitos} hitos ✓`, 'success');
-    setSyncStatus('ok', 'Importado ✓');
-    showToast(`${parsed.length} tareas importadas`, 3200, 'success');
-
-    await cargarGantt();
-    setTimeout(clearImportProgress, 4500);
+    // En vez de subir directo, abrir Modal Preview editable
+    openImportPreview(parsed, file.name, _ganttState.tasks);
+    setTimeout(clearImportProgress, 2400);
 
   } catch (e) {
     console.error('Import error:', e);
@@ -3531,6 +4913,8 @@ function renderGanttBoard() {
   const board = document.getElementById('gantt-board');
   if (!board) return;
   board.classList.remove('hidden');
+  // Activar modo Row 48 con barra de fondo
+  board.setAttribute('data-row-h','48');
 
   const all = _ganttState.tasks || [];
   if (!all.length) {
@@ -3551,7 +4935,13 @@ function renderGanttBoard() {
   const hoyStr = hoyDate.toISOString().slice(0,10);
   const sevenAhead = new Date(hoyDate.getTime() + 7*86400000);
 
+  const cat = _ganttState.categoria || 'ALL';
   const tasks = all.filter(t => {
+    // Filtro por categoría (sub-tab)
+    if (cat !== 'ALL') {
+      const tcat = t.categoria || autoDetectCategory(t.nombre_tarea, t.es_hito);
+      if (tcat !== cat) return false;
+    }
     const a = getAnalysis(t);
     if (_ganttState.filter === 'critico')  return t.es_critico;
     if (_ganttState.filter === 'hito')     return t.es_hito;
@@ -3653,6 +5043,13 @@ function renderGanttBoard() {
     const isLate = a.status === 'critica' && pct < 100;
     const isSel = (_ganttState.selectedId && (t.id||t.orden) == _ganttState.selectedId);
     const dimmed = (_ganttState.layers.critica && !isCrit) || (_ganttState.layers.sinmov && !(a.sinMovDias>=5));
+    // Color de la barra de fondo según salud
+    const rowColor = a.salud === 'good' ? '#16a34a'
+                   : a.salud === 'warn' ? '#d97706'
+                   : a.salud === 'bad'  ? '#dc2626'
+                   : a.salud === 'block'? '#0b1226'
+                   : a.salud === 'done' ? '#16a34a'
+                   : '#0891B2';
     // Health pill (siempre visible si la capa Salud está activa)
     const healthPill = _ganttState.layers.health
       ? `<span class="h-pill h-${a.salud}" title="${a.status}"></span>`
@@ -3661,9 +5058,39 @@ function renderGanttBoard() {
     if (isHito) chips.push('<span class="chip hito">◆ HITO</span>');
     if (isCrit) chips.push('<span class="chip crit">CRIT</span>');
     if (isLate) chips.push('<span class="chip late">ATRASO</span>');
-    return `<div class="gantt-row lvl-${lvl} ${isSel?'selected':''}" data-id="${t.id||t.orden||''}" style="${dimmed?'opacity:.45':''}" onclick="abrirTaskPanelById('${t.id||t.orden||''}')">
+
+    // Sub-display según tipo de medición
+    const tm = t.tipo_medicion || 'pct_manual';
+    let inlineMeta = '';
+    if (tm === 'cantidad' && t.cantidad_total) {
+      const ex = parseFloat(t.cantidad_ejecutada||0);
+      const tt = parseFloat(t.cantidad_total||1);
+      inlineMeta = `<span class="qty-chip"><b>${ex}</b> / <b>${tt}</b> <span class="u">${t.unidad||''}</span></span>`;
+    } else if (tm === 'cumplimiento') {
+      const ok = !!t.cumplido || pct >= 100;
+      inlineMeta = `<span class="cumpl-toggle ${ok?'si':'no'}" onclick="event.stopPropagation();toggleCumplimiento('${t.id||''}',${!ok})">${ok?'✓ Cumplido':'Pendiente'}</span>`;
+    } else if (tm === 'checklist' && Array.isArray(t.checklist_items)) {
+      const done = (t.checklist_items||[]).filter(x => x.done).length;
+      const tot = (t.checklist_items||[]).length || 1;
+      const cp = (done/tot)*100;
+      inlineMeta = `<span class="cl-mini"><span class="cl-bar"><span class="cl-bar-fill" style="width:${cp}%"></span></span><b>${done}/${tot}</b></span>`;
+    }
+
+    const tmBadge = lvl !== 1 && lvl !== 2
+      ? `<span class="tm-badge" data-tm="${tm}">${tm==='cumplimiento'?'S/N':tm==='cantidad'?'qty':tm==='checklist'?'lista':'%'}</span>`
+      : '';
+
+    // Barra de fondo gradient (solo nivel 3, no fases)
+    const bgfill = (lvl === 3) ? `<div class="row-bgfill" style="--row-color:${rowColor};width:${Math.max(0,Math.min(100,pct))}%"></div>` : '';
+
+    return `<div class="gantt-row lvl-${lvl} ${isSel?'selected':''}" data-id="${t.id||t.orden||''}" style="--row-color:${rowColor};${dimmed?'opacity:.45':''}" onclick="abrirTaskPanelById('${t.id||t.orden||''}')">
+      ${bgfill}
       <div class="gid">${t.orden || i+1}</div>
-      <div class="gname">${healthPill}${chips.join('')}${(t.nombre_tarea||'').replace(/</g,'&lt;')}</div>
+      <div class="gname">
+        ${healthPill}${tmBadge}
+        <span class="nm-main">${chips.join('')}${(t.nombre_tarea||'').replace(/</g,'&lt;')}</span>
+        ${inlineMeta}
+      </div>
       <div class="gdur">${t.duracion_dias!=null?t.duracion_dias+'d':'—'}</div>
       <div class="gpct">${pct.toFixed(0)}%</div>
     </div>`;
