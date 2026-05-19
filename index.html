@@ -2216,6 +2216,169 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 }
 .eq-empty .ic{font-size:32px;opacity:.5;margin-bottom:8px;}
 
+/* ─── ETA highlight en card ─── */
+.eq-card{position:relative;cursor:pointer;}
+.eq-card:hover{transform:translateY(-2px) scale(1.005);box-shadow:0 8px 20px rgba(15,23,42,.10);}
+.eq-card .eq-eta{
+  position:absolute;top:8px;right:10px;
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:999px;
+  font-size:9.5px;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(135deg,rgba(46,125,209,.10),rgba(8,145,178,.06));
+  color:var(--brand-700);
+  border:1px solid rgba(46,125,209,.18);
+}
+.eq-card .eq-eta svg{width:10px;height:10px;}
+.eq-card .eq-eta.late{
+  background:var(--danger-bg);color:#991b1b;
+  border-color:rgba(220,38,38,.20);
+  animation:liveBreath 1.4s ease-in-out infinite;
+}
+.eq-card .eq-eta.warn{
+  background:var(--warning-bg);color:#92400e;border-color:rgba(217,119,6,.20);
+}
+.eq-card .eq-eta.done{
+  background:var(--success-bg);color:#166534;border-color:rgba(22,163,74,.20);
+}
+.eq-card .eq-eta-date{
+  font-variant-numeric:tabular-nums;font-weight:700;color:var(--text-2);
+  font-size:11px;margin-top:2px;
+}
+.eq-card .eq-info{padding-right:90px;}
+.eq-card .eq-progress-strip{
+  position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:rgba(15,23,42,.06);border-radius:0 0 12px 12px;overflow:hidden;
+}
+.eq-card .eq-progress-strip .fill{
+  height:100%;width:var(--p,0%);
+  background:linear-gradient(90deg,var(--teal-500),var(--brand-500));
+  transition:width 600ms var(--ease-out);
+}
+.eq-card.culminado .eq-progress-strip .fill{background:linear-gradient(90deg,var(--success-2),var(--success));}
+.eq-card.transito .eq-progress-strip .fill{background:linear-gradient(90deg,#fbbf24,var(--warning));}
+
+/* ─── Modal Detalle de Equipo ─── */
+.eqd-backdrop{
+  position:fixed;inset:0;z-index:88;
+  background:linear-gradient(135deg,rgba(11,18,38,.50),rgba(46,125,209,.18));
+  backdrop-filter:blur(8px) saturate(140%);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity var(--d) var(--ease);
+}
+.eqd-backdrop.open{opacity:1;pointer-events:auto;}
+.eqd-modal{
+  position:fixed;left:50%;top:50%;z-index:89;
+  width:min(96vw,720px);max-height:88vh;
+  transform:translate(-50%,-50%) scale(.96);
+  background:var(--glass-strong);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid rgba(255,255,255,.40);
+  border-radius:18px;
+  box-shadow:0 40px 100px rgba(11,23,57,.30),0 1px 0 rgba(255,255,255,.6) inset;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--d) var(--ease-out),transform var(--d-slow) var(--ease-out);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.eqd-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.eqd-head{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 22px;
+  background:linear-gradient(135deg,rgba(46,125,209,.10),rgba(8,145,178,.06));
+  border-bottom:1px solid var(--border);
+}
+.eqd-avatar{
+  width:54px;height:54px;border-radius:14px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--brand-500),var(--teal-600));
+  color:#fff;font-size:16px;font-weight:900;letter-spacing:-.02em;
+  box-shadow:0 8px 18px rgba(46,125,209,.25),inset 0 1px 0 rgba(255,255,255,.20);
+}
+.eqd-modal.culminado .eqd-avatar{background:linear-gradient(135deg,var(--success-2),var(--success));}
+.eqd-modal.transito .eqd-avatar{background:linear-gradient(135deg,#fbbf24,var(--warning));}
+.eqd-modal.pendiente .eqd-avatar{background:linear-gradient(135deg,#94a3b8,#64748b);}
+.eqd-meta{flex:1;min-width:0;}
+.eqd-meta .lbl{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);}
+.eqd-meta .ttl{font-size:18px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;margin-top:2px;}
+.eqd-meta .sub{font-size:12px;color:var(--text-2);margin-top:2px;}
+.eqd-close{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:rgba(15,23,42,.06);border:none;cursor:pointer;font-family:inherit;
+  color:var(--text-2);transition:all var(--d) var(--ease);
+}
+.eqd-close:hover{background:var(--danger-bg);color:#991b1b;}
+.eqd-close svg{width:16px;height:16px;}
+
+.eqd-body{flex:1;overflow-y:auto;padding:18px 22px 22px;}
+
+.eqd-eta-card{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;margin-bottom:18px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(46,125,209,.08),rgba(8,145,178,.04));
+  border:1px solid rgba(46,125,209,.20);
+}
+.eqd-eta-card.late{background:linear-gradient(135deg,rgba(220,38,38,.10),rgba(239,68,68,.04));border-color:rgba(220,38,38,.22);}
+.eqd-eta-card.done{background:linear-gradient(135deg,rgba(22,163,74,.10),rgba(34,197,94,.04));border-color:rgba(22,163,74,.22);}
+.eqd-eta-card .eqd-ic{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--brand-500),var(--teal-600));color:#fff;
+}
+.eqd-eta-card.late .eqd-ic{background:linear-gradient(135deg,var(--danger-2),var(--danger));}
+.eqd-eta-card.done .eqd-ic{background:linear-gradient(135deg,var(--success-2),var(--success));}
+.eqd-eta-card .eqd-ic svg{width:20px;height:20px;}
+.eqd-eta-card .eqd-eta-info{flex:1;}
+.eqd-eta-card .eqd-eta-info .lbl{font-size:9.5px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.eqd-eta-card .eqd-eta-info .val{font-size:22px;font-weight:900;color:var(--navy-800);letter-spacing:-.02em;line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums;}
+.eqd-eta-card.late .eqd-eta-info .val{color:var(--danger);}
+.eqd-eta-card.done .eqd-eta-info .val{color:var(--success);}
+.eqd-eta-card .eqd-eta-info .sub{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+
+.eqd-timeline{
+  display:flex;align-items:center;gap:0;
+  padding:6px 0 18px;margin-bottom:16px;border-bottom:1px solid var(--border);
+}
+.eqd-step{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  position:relative;font-size:9.5px;color:var(--text-3);font-weight:700;
+  text-align:center;
+}
+.eqd-step .step-dot{
+  width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid var(--border-strong);z-index:2;
+  transition:all var(--d) var(--ease);
+}
+.eqd-step.done .step-dot{background:var(--success);border-color:var(--success);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
+.eqd-step.current .step-dot{
+  background:linear-gradient(135deg,#22d3ee,#7c3aed);
+  border-color:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.25),0 0 12px rgba(124,58,237,.40);
+  animation:nowPulse 1.4s ease-in-out infinite;
+}
+.eqd-step::before{
+  content:'';position:absolute;top:8px;left:-50%;right:50%;height:2px;
+  background:var(--border-strong);z-index:1;
+}
+.eqd-step:first-child::before{display:none;}
+.eqd-step.done::before,.eqd-step.current::before{background:linear-gradient(90deg,var(--success),var(--teal-500));}
+.eqd-step .step-lbl{font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);max-width:80px;line-height:1.2;}
+.eqd-step.done .step-lbl,.eqd-step.current .step-lbl{color:var(--navy-800);}
+.eqd-step .step-date{font-size:9px;color:var(--text-3);font-variant-numeric:tabular-nums;margin-top:1px;}
+
+.eqd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.eqd-field{
+  padding:10px 12px;border-radius:10px;
+  background:rgba(255,255,255,.65);border:1px solid var(--border);
+}
+.eqd-field .lbl{font-size:9.5px;font-weight:800;letter-spacing:.10em;color:var(--text-3);text-transform:uppercase;}
+.eqd-field .val{font-size:13px;font-weight:700;color:var(--navy-800);margin-top:2px;word-break:break-word;}
+.eqd-field.full{grid-column:span 2;}
+.eqd-section-tit{
+  font-size:10.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--text-3);margin:14px 0 8px;display:flex;align-items:center;gap:6px;
+}
+.eqd-section-tit svg{width:13px;height:13px;}
+
 /* ─── PMO Live Bridge pill ─── */
 .pmo-pill{
   display:inline-flex;align-items:center;gap:8px;
@@ -2899,6 +3062,13 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
     </div>
 
   </div><!-- /main-wrap -->
+
+  <!-- ═══ MODAL DETALLE DE EQUIPO (PMO) ═══ -->
+  <div class="eqd-backdrop" id="eqd-backdrop" onclick="cerrarEquipoDetail()"></div>
+  <aside class="eqd-modal" id="eqd-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="eqd-head" id="eqd-head"></div>
+    <div class="eqd-body" id="eqd-body"></div>
+  </aside>
 
   <!-- ═══ MODAL PREVIEW IMPORT · AI Parsing Center ═══ -->
   <div class="mp-backdrop" id="mp-backdrop" onclick="closeImportPreview()"></div>
@@ -4088,6 +4258,176 @@ function _eqStatusClass(st) {
   return 'pendiente';
 }
 
+// Parser de fechas formato PMO "01-ago-25" → Date
+function _pmoParseDate(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/(\d{1,2})[\-\s/]+([a-zñ]{3,4})[\.\-\s/]+(\d{2,4})/i);
+  if (!m) return null;
+  const mo = SPANISH_MONTHS[m[2].toLowerCase().slice(0,3)];
+  if (mo === undefined) return null;
+  let y = parseInt(m[3]); if (y < 100) y += 2000;
+  return new Date(y, mo, parseInt(m[1]));
+}
+
+// Días entre hoy y la fecha (negativo = futuro, positivo = pasado)
+function _daysFromToday(d) {
+  if (!d) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fd = new Date(d); fd.setHours(0,0,0,0);
+  return Math.round((hoy - fd) / 86400000);
+}
+
+// Formato fecha bonita ES: "26 oct 2025"
+function _fmtFechaES(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' }).replace(/\./g,'');
+}
+
+// Calcula info de ETA del equipo
+function _equipoEtaInfo(e) {
+  const stCls = _eqStatusClass(e.st);
+  const eta = _pmoParseDate(e.eta);
+  if (!eta) return { etaDate:null, label:'Sin ETA', sub:'', cls:'' };
+  const daysAgo = _daysFromToday(eta);
+  if (stCls === 'culminado') {
+    if (daysAgo > 0)  return { etaDate:eta, label:'Llegó', sub:`hace ${daysAgo}d`, cls:'done' };
+    if (daysAgo === 0) return { etaDate:eta, label:'Llegó', sub:'hoy', cls:'done' };
+    return { etaDate:eta, label:'ETA', sub:_fmtFechaES(eta), cls:'done' };
+  }
+  if (daysAgo > 0) return { etaDate:eta, label:`+${daysAgo}d atrasado`, sub:'ETA '+_fmtFechaES(eta), cls:'late' };
+  if (daysAgo === 0) return { etaDate:eta, label:'Llega hoy', sub:_fmtFechaES(eta), cls:'warn' };
+  const diasFalta = Math.abs(daysAgo);
+  if (diasFalta <= 7)  return { etaDate:eta, label:`En ${diasFalta}d`, sub:_fmtFechaES(eta), cls:'warn' };
+  if (diasFalta <= 30) return { etaDate:eta, label:`En ${diasFalta}d`, sub:_fmtFechaES(eta), cls:'' };
+  return { etaDate:eta, label:_fmtFechaES(eta), sub:`En ${diasFalta}d`, cls:'' };
+}
+
+// % aproximado de avance de un equipo según etapa
+function _equipoPctEstimado(e) {
+  const stCls = _eqStatusClass(e.st);
+  const so = (e.so||'').toLowerCase();
+  if (stCls === 'culminado') return 100;
+  if (stCls === 'transito') return 70;
+  if (/aduana/i.test(so)) return 80;
+  if (/embarc/i.test(so)) return 60;
+  if (/produc|fabric/i.test(so)) return 40;
+  if (/orden|pedido/i.test(so)) return 20;
+  if (/cotiz/i.test(so)) return 10;
+  return 0;
+}
+
+// Buscar un equipo por su doc (unique-ish key)
+function _findEquipoByDoc(doc) {
+  return (_pmoState.equipos||[]).find(e => e.doc === doc);
+}
+
+// ── Modal Detalle de Equipo ──
+function openEquipoDetail(doc) {
+  const e = _findEquipoByDoc(doc);
+  if (!e) return;
+  const stCls = _eqStatusClass(e.st);
+  const eta = _equipoEtaInfo(e);
+  const pct = _equipoPctEstimado(e);
+  const fechaOrden = _pmoParseDate(e.fecha);
+  const fe  = _pmoParseDate(e.fe);
+  const fer = _pmoParseDate(e.fer);
+  const etd = _pmoParseDate(e.etd);
+
+  // Avatar iniciales
+  const ini = (e.tipo||'??').replace(/[^A-ZÁÉÍÓÚÑ]/gi,'').slice(0,2).toUpperCase() || (e.tipo||'').slice(0,2).toUpperCase();
+
+  // Modal class por estado
+  const modal = document.getElementById('eqd-modal');
+  const bg = document.getElementById('eqd-backdrop');
+  modal.className = 'eqd-modal ' + stCls;
+
+  // Header
+  document.getElementById('eqd-head').innerHTML = `
+    <div class="eqd-avatar">${ini}</div>
+    <div class="eqd-meta">
+      <div class="lbl">${e.proj || e.proj_csv || '—'} · ${e.mod || '—'}</div>
+      <div class="ttl">${(e.tipo||'—').toLowerCase()}</div>
+      <div class="sub">${e.proveedor||'—'}${e.origen?' · '+e.origen:''}</div>
+    </div>
+    <button class="eqd-close" onclick="cerrarEquipoDetail()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  `;
+
+  // ETA card prominente
+  const etaCard = `<div class="eqd-eta-card ${eta.cls||''}">
+    <div class="eqd-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    </div>
+    <div class="eqd-eta-info">
+      <div class="lbl">Fecha de llegada</div>
+      <div class="val">${eta.etaDate ? _fmtFechaES(eta.etaDate) : 'Sin ETA'}</div>
+      <div class="sub">${eta.label}${eta.sub?' · '+eta.sub:''}</div>
+    </div>
+  </div>`;
+
+  // Timeline visual (etapas)
+  const steps = [
+    { key:'orden',   lbl:'Orden',       date:fechaOrden, done:!!fechaOrden },
+    { key:'fab',     lbl:'Fabricación', date:fe,          done:stCls!=='pendiente' || /produc|fabric|embarc|tr[áa]nsito|culmin/i.test(e.st||'') },
+    { key:'embarq',  lbl:'Embarque',    date:etd,         done:/embarc|tr[áa]nsito|culmin/i.test(e.st||'') || /embarc/i.test(e.so||'') },
+    { key:'transito',lbl:'En tránsito', date:null,        done:stCls==='culminado', current:stCls==='transito' },
+    { key:'aduana',  lbl:'Aduana',      date:null,        done:stCls==='culminado', current:/aduana/i.test(e.so||'') },
+    { key:'recibido',lbl:'Recibido',    date:eta.etaDate, done:stCls==='culminado', current:stCls==='culminado' }
+  ];
+  // Detectar current si no se marcó
+  if (!steps.some(s=>s.current)) {
+    if (stCls === 'transito') steps[3].current = true;
+    else if (stCls === 'produccion') steps[1].current = true;
+    else if (stCls === 'pendiente') steps[0].current = true;
+  }
+  const timeline = `<div class="eqd-timeline">${steps.map(s => `
+    <div class="eqd-step ${s.done?'done':''} ${s.current?'current':''}">
+      <div class="step-dot"></div>
+      <div class="step-lbl">${s.lbl}</div>
+      <div class="step-date">${s.date ? _fmtFechaES(s.date).replace(/ \d{4}/,'') : ''}</div>
+    </div>`).join('')}</div>`;
+
+  // Grid de campos
+  const fields = `<div class="eqd-grid">
+    <div class="eqd-field"><div class="lbl">Tipo</div><div class="val">${e.tipo||'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Estado</div><div class="val">${e.st||'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Etapa actual</div><div class="val">${e.so||'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Modo transporte</div><div class="val">${e.mod||'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Proveedor</div><div class="val">${e.proveedor||'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Origen</div><div class="val">${e.origen||'—'}</div></div>
+    <div class="eqd-field full"><div class="lbl">Doc / Referencia</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;">${e.doc||'—'}${e.ref?' · '+e.ref:''}</div></div>
+  </div>`;
+
+  const fechas = `<div class="eqd-section-tit">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Cronograma del equipo
+  </div>
+  <div class="eqd-grid">
+    <div class="eqd-field"><div class="lbl">Fecha de orden</div><div class="val">${fechaOrden?_fmtFechaES(fechaOrden):'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Fecha exportación (fe)</div><div class="val">${fe?_fmtFechaES(fe):'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">Fecha recepción fact. (fer)</div><div class="val">${fer?_fmtFechaES(fer):'—'}</div></div>
+    <div class="eqd-field"><div class="lbl">ETD · salida estimada</div><div class="val">${etd?_fmtFechaES(etd):'—'}</div></div>
+    <div class="eqd-field full"><div class="lbl">ETA · llegada estimada</div><div class="val" style="color:${eta.cls==='late'?'var(--danger)':eta.cls==='done'?'var(--success)':'var(--navy-800)'}">${eta.etaDate?_fmtFechaES(eta.etaDate):'—'}${eta.sub?` · ${eta.sub}`:''}</div></div>
+  </div>`;
+
+  // Body completo
+  document.getElementById('eqd-body').innerHTML = etaCard + timeline + fields + fechas +
+    `<div style="font-size:10px;color:var(--text-3);text-align:right;margin-top:14px;">Fuente: Centro de Control PMO · live</div>`;
+
+  // Abrir
+  bg.classList.add('open');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function cerrarEquipoDetail() {
+  const bg = document.getElementById('eqd-backdrop');
+  const modal = document.getElementById('eqd-modal');
+  if (bg) bg.classList.remove('open');
+  if (modal) { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+}
+
 // Renderiza el panel de Equipos PMO (reusable para Dashboard y Gantt)
 function renderEquiposPanel(bodyId, liveId) {
   const body = document.getElementById(bodyId);
@@ -4145,17 +4485,29 @@ function renderEquiposPanel(bodyId, liveId) {
   const renderEq = e => {
     const stClass = _eqStatusClass(e.st);
     const ini = (e.tipo||'??').replace(/[^A-ZÁÉÍÓÚÑ]/gi,'').slice(0,2).toUpperCase() || (e.tipo||'').slice(0,2).toUpperCase();
-    return `<div class="eq-card ${stClass}">
+    const eta = _equipoEtaInfo(e);
+    const pct = _equipoPctEstimado(e);
+    const etaPill = eta.etaDate
+      ? `<div class="eq-eta ${eta.cls||''}" title="${eta.label} · ${eta.sub}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${eta.label}
+         </div>`
+      : `<div class="eq-eta" style="opacity:.55">Sin ETA</div>`;
+    const etaDate = eta.etaDate ? `<div class="eq-eta-date">${_fmtFechaES(eta.etaDate)}</div>` : '';
+    return `<div class="eq-card ${stClass}" onclick="openEquipoDetail('${(e.doc||'').replace(/'/g,'\\\'')}')">
+      ${etaPill}
       <div class="eq-avatar">${ini}</div>
       <div class="eq-info">
         <div class="eq-tipo">${(e.tipo||'—').toLowerCase()}</div>
         <div class="eq-prov">${e.proveedor||'—'}${e.origen?' · '+e.origen:''}</div>
+        ${etaDate}
         <div class="eq-meta">
           <span class="eq-status ${stClass}">${e.st||'—'}</span>
-          ${e.doc?`<span class="eq-doc">${e.doc}</span>`:''}
+          ${e.so?`<span style="font-weight:600">${e.so}</span>`:''}
           ${e.mod?`<span>${e.mod}</span>`:''}
         </div>
       </div>
+      <div class="eq-progress-strip"><div class="fill" style="--p:${pct}%;width:${pct}%"></div></div>
     </div>`;
   };
 
@@ -6038,6 +6390,8 @@ document.addEventListener('keydown', (e) => {
     if (panel && panel.classList.contains('open')) cerrarTaskPanel();
     const modal = document.getElementById('mp-modal');
     if (modal && modal.classList.contains('open')) closeImportPreview();
+    const eqd = document.getElementById('eqd-modal');
+    if (eqd && eqd.classList.contains('open')) cerrarEquipoDetail();
   }
 });
 
