@@ -1198,6 +1198,280 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 }
 .gantt-empty-board b{display:block;color:var(--text);font-weight:800;font-size:14px;margin-bottom:4px;}
 
+/* ────────────────────────────────────────────
+   PHASE 4 · GANTT INTELLIGENCE ENGINE
+   ──────────────────────────────────────────── */
+
+/* Capas (layer toggles) */
+.gantt-layers{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:10px 20px;
+  background:linear-gradient(180deg,rgba(247,249,253,.40),rgba(247,249,253,0));
+  border-bottom:1px solid var(--border);
+}
+.gantt-layers .lyr-tag{
+  font-size:9.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--text-3);margin-right:4px;
+}
+.lyr-toggle{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 11px;border-radius:999px;
+  font-size:11px;font-weight:700;font-family:inherit;letter-spacing:.02em;
+  background:rgba(255,255,255,.70);
+  border:1px solid var(--border);color:var(--text-2);
+  cursor:pointer;transition:all var(--d) var(--ease);
+}
+.lyr-toggle:hover{border-color:var(--border-strong);color:var(--text);}
+.lyr-toggle .lyr-dot{width:8px;height:8px;border-radius:50%;background:var(--text-3);transition:all var(--d) var(--ease);}
+.lyr-toggle.active{background:var(--surface);color:var(--navy-800);border-color:var(--border-strong);box-shadow:var(--sh-1);}
+.lyr-toggle.active .lyr-dot{box-shadow:0 0 0 3px currentColor;}
+.lyr-toggle[data-layer="plan"].active   .lyr-dot{background:#94a3b8;}
+.lyr-toggle[data-layer="forecast"].active .lyr-dot{background:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.20);}
+.lyr-toggle[data-layer="critica"].active .lyr-dot{background:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.20);}
+.lyr-toggle[data-layer="sinmov"].active  .lyr-dot{background:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.20);}
+.lyr-toggle[data-layer="health"].active  .lyr-dot{background:linear-gradient(90deg,#16a34a,#f59e0b,#dc2626);}
+
+/* Panel de alertas operativas */
+.gantt-alerts{
+  padding:12px 20px 14px;
+  background:linear-gradient(135deg,rgba(220,38,38,.025),rgba(124,58,237,.02));
+  border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;
+}
+.gantt-alerts.hidden{display:none;}
+.galert{
+  position:relative;display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:12px;
+  background:rgba(255,255,255,.80);
+  border:1px solid var(--border);
+  transition:all var(--d) var(--ease);
+  cursor:pointer;text-align:left;width:100%;font-family:inherit;color:inherit;
+  animation:galertIn .4s var(--ease-out) both;
+}
+.galert:hover{transform:translateY(-1px);box-shadow:var(--sh-2);background:#fff;}
+@keyframes galertIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.galert .gicon{
+  width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  display:grid;place-items:center;background:var(--surface-2);color:var(--text-2);
+}
+.galert.crit  .gicon{background:var(--danger-bg); color:#991b1b;animation:gpulse 1.4s ease-in-out infinite;}
+.galert.warn  .gicon{background:var(--warning-bg);color:#92400e;}
+.galert.info  .gicon{background:rgba(34,211,238,.14);color:var(--teal-700);}
+.galert.block .gicon{background:rgba(15,23,42,.10);color:#0b1226;}
+@keyframes gpulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.30);}50%{box-shadow:0 0 0 6px transparent;}}
+.galert .gicon svg{width:15px;height:15px;}
+.galert .gtxt{flex:1;min-width:0;}
+.galert .gt{font-size:12px;font-weight:800;color:var(--navy-800);letter-spacing:-.005em;}
+.galert .gd{font-size:10.5px;color:var(--text-2);margin-top:1px;line-height:1.35;}
+.galert .gchev{flex-shrink:0;color:var(--text-3);}
+.galert.crit::before{
+  content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,#ef4444,#dc2626);
+}
+.galert.warn::before{
+  content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,#f59e0b,#d97706);
+}
+
+/* Health pills (inline en lista de tareas) */
+.h-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;
+  font-size:9px;font-weight:900;letter-spacing:0;
+  flex-shrink:0;margin-right:2px;
+  position:relative;
+}
+.h-pill.h-good{background:var(--success-bg);color:#166534;box-shadow:inset 0 0 0 1px rgba(22,163,74,.30);}
+.h-pill.h-warn{background:var(--warning-bg);color:#92400e;box-shadow:inset 0 0 0 1px rgba(217,119,6,.30);}
+.h-pill.h-bad {background:var(--danger-bg);color:#991b1b;box-shadow:inset 0 0 0 1px rgba(220,38,38,.30);
+  animation:hpulse 1.6s ease-in-out infinite;}
+.h-pill.h-block{background:rgba(15,23,42,.12);color:#0b1226;box-shadow:inset 0 0 0 1px rgba(15,23,42,.25);}
+.h-pill.h-idle{background:rgba(15,23,42,.06);color:var(--text-3);box-shadow:inset 0 0 0 1px var(--border-strong);}
+.h-pill.h-done{background:var(--success-bg);color:#166534;}
+.h-pill.h-done::after{content:'✓';font-size:9px;font-weight:900;}
+@keyframes hpulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(220,38,38,.30),0 0 0 0 rgba(220,38,38,.30);}50%{box-shadow:inset 0 0 0 1px rgba(220,38,38,.30),0 0 0 4px transparent;}}
+
+/* Plan ghost bar (baseline) */
+.gantt-plan-bar{
+  position:absolute;top:24px;height:5px;border-radius:3px;
+  background:repeating-linear-gradient(90deg,rgba(15,23,42,.18) 0,rgba(15,23,42,.18) 4px,transparent 4px,transparent 7px);
+  border:1px solid rgba(15,23,42,.10);
+  z-index:0;pointer-events:none;
+}
+
+/* Forecast bar (predicted finish) */
+.gantt-forecast-bar{
+  position:absolute;top:8px;height:18px;
+  border:2px dashed rgba(167,139,250,.85);
+  border-radius:7px;
+  background:linear-gradient(135deg,rgba(167,139,250,.10),rgba(124,58,237,.06));
+  z-index:0;pointer-events:none;
+  box-shadow:0 0 0 1px rgba(167,139,250,.18);
+}
+.gantt-forecast-bar.late{
+  border-color:rgba(220,38,38,.85);
+  background:repeating-linear-gradient(45deg,rgba(220,38,38,.08) 0,rgba(220,38,38,.08) 4px,transparent 4px,transparent 8px);
+  box-shadow:0 0 8px rgba(220,38,38,.18);
+}
+
+/* Selected row */
+.gantt-row.selected,.gantt-time-row.selected{
+  background:linear-gradient(90deg,rgba(6,182,212,.10),rgba(124,58,237,.06))!important;
+  box-shadow:inset 3px 0 0 var(--teal-500);
+}
+
+/* ─── Side-panel drill-down ─── */
+.task-panel-backdrop{
+  position:fixed;inset:0;z-index:80;
+  background:rgba(11,18,38,.40);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity var(--d) var(--ease);
+}
+.task-panel-backdrop.open{opacity:1;pointer-events:auto;}
+.task-panel{
+  position:fixed;top:0;right:0;bottom:0;width:480px;max-width:96vw;z-index:81;
+  background:var(--glass-strong);
+  backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+  border-left:1px solid var(--border);
+  box-shadow:-20px 0 60px rgba(11,23,57,.20);
+  transform:translateX(100%);
+  transition:transform var(--d-slow) var(--ease-out);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.task-panel.open{transform:translateX(0);}
+.tp-head{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:18px 20px 14px;
+  background:linear-gradient(135deg,rgba(46,125,209,.06),rgba(124,58,237,.05));
+  border-bottom:1px solid var(--border);
+}
+.tp-head .h-pill{width:18px;height:18px;font-size:11px;margin-top:2px;}
+.tp-head .ttl{flex:1;min-width:0;}
+.tp-head .ttl .lvl{font-size:9.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);}
+.tp-head .ttl .nm{font-size:16px;font-weight:800;color:var(--navy-800);letter-spacing:-.01em;line-height:1.25;margin-top:1px;}
+.tp-head .close{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  display:grid;place-items:center;background:rgba(15,23,42,.06);
+  border:none;cursor:pointer;color:var(--text-2);
+  transition:all var(--d) var(--ease);font-family:inherit;
+}
+.tp-head .close:hover{background:var(--danger-bg);color:#991b1b;}
+.tp-head .close svg{width:14px;height:14px;}
+.tp-body{flex:1;overflow-y:auto;padding:16px 20px 24px;}
+.tp-body::-webkit-scrollbar{width:6px;}
+.tp-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+
+.tp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.tp-stat{
+  padding:10px 12px;border-radius:10px;
+  background:rgba(255,255,255,.70);
+  border:1px solid var(--border);
+}
+.tp-stat .lbl{font-size:9.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);}
+.tp-stat .val{font-size:18px;font-weight:900;color:var(--navy-800);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px;}
+.tp-stat .sub{font-size:10.5px;color:var(--text-3);margin-top:1px;}
+.tp-stat.good .val{color:var(--success);}
+.tp-stat.warn .val{color:var(--warning);}
+.tp-stat.bad  .val{color:var(--danger);}
+
+.tp-section{margin-top:14px;}
+.tp-section h4{
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.tp-section h4 svg{width:13px;height:13px;}
+
+.tp-progress{
+  position:relative;height:30px;border-radius:8px;
+  background:var(--surface-2);overflow:hidden;
+  border:1px solid var(--border);
+}
+.tp-progress .real{
+  position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,var(--teal-400),var(--teal-700));
+  border-radius:7px 0 0 7px;transition:width var(--d-slow) var(--ease-out);
+  display:flex;align-items:center;justify-content:flex-end;
+  font-size:11px;font-weight:800;color:#fff;padding-right:8px;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);
+}
+.tp-progress .ref{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:rgba(15,23,42,.40);
+}
+.tp-progress .ref::after{
+  content:attr(data-lbl);position:absolute;top:-2px;left:4px;
+  font-size:9px;font-weight:800;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;
+  white-space:nowrap;
+}
+
+.tp-fc{
+  padding:12px 14px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(167,139,250,.10),rgba(124,58,237,.06));
+  border:1px solid rgba(167,139,250,.22);
+}
+.tp-fc.late{background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(239,68,68,.05));border-color:rgba(220,38,38,.22);}
+.tp-fc.early{background:linear-gradient(135deg,rgba(22,163,74,.08),rgba(34,197,94,.06));border-color:rgba(22,163,74,.22);}
+.tp-fc .tp-fc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.tp-fc .tp-fc-t{font-size:12px;font-weight:800;color:var(--navy-800);}
+.tp-fc .tp-fc-v{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.tp-fc.late  .tp-fc-v{color:var(--danger);}
+.tp-fc.early .tp-fc-v{color:var(--success);}
+.tp-fc.ok    .tp-fc-v{color:var(--violet-600);}
+.tp-fc .tp-fc-d{font-size:11px;color:var(--text-2);margin-top:4px;line-height:1.45;}
+.tp-fc .tp-fc-prob{
+  display:inline-block;margin-top:6px;
+  font-size:10px;font-weight:800;letter-spacing:.04em;
+  padding:2px 8px;border-radius:999px;
+  background:rgba(15,23,42,.06);color:var(--text-2);
+}
+
+.tp-related{display:flex;flex-direction:column;gap:6px;}
+.tp-related .empty{font-size:11.5px;color:var(--text-3);padding:8px 0;}
+.tp-rel-row{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.55);
+  border:1px solid var(--border);font-size:11.5px;color:var(--text);
+}
+.tp-rel-row .rel-t{
+  font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 7px;border-radius:999px;flex-shrink:0;
+  background:var(--surface-2);color:var(--text-2);
+}
+.tp-rel-row.kind-riesgo .rel-t{background:var(--danger-bg);color:#991b1b;}
+.tp-rel-row.kind-reporte .rel-t{background:var(--success-bg);color:#166534;}
+.tp-rel-row.kind-personal .rel-t{background:rgba(46,125,209,.10);color:var(--brand-700);}
+
+.tp-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.tp-actions .btn{flex:1;min-width:120px;}
+
+@media (max-width:560px){
+  .task-panel{width:100vw;max-width:none;}
+}
+
+/* Validation report (post-import) */
+.import-report{
+  margin:0 20px 14px;
+  background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(217,119,6,.04));
+  border:1px solid rgba(217,119,6,.22);
+  border-radius:12px;padding:12px 14px;
+  font-size:11.5px;color:#78350f;
+  animation:fadeUp var(--d) var(--ease-out);
+}
+.import-report.hidden{display:none;}
+.import-report h5{
+  font-size:11px;font-weight:800;color:#92400e;
+  letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+.import-report h5 svg{width:14px;height:14px;}
+.import-report ul{margin:0;padding-left:18px;}
+.import-report li{margin:2px 0;line-height:1.4;}
+.import-report .close-x{
+  float:right;font-size:14px;font-weight:800;color:#92400e;
+  cursor:pointer;padding:0 4px;
+}
+.import-report .close-x:hover{color:var(--danger);}
+
 /* ── CURVA S header chips ── */
 .curva-chip-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--text-2);flex-wrap:wrap;}
 .curva-chip{display:inline-flex;align-items:center;gap:6px;font-weight:700;}
@@ -1469,8 +1743,10 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <span class="gtb-tag">Filtro</span>
           <div class="gtb-group">
             <button class="gtb-btn gtb-filter active" data-filter="all" onclick="setGanttFilter('all')">Todas</button>
+            <button class="gtb-btn gtb-filter" data-filter="semana" onclick="setGanttFilter('semana')">📌 Esta semana</button>
             <button class="gtb-btn gtb-filter" data-filter="critico" onclick="setGanttFilter('critico')">Críticas</button>
             <button class="gtb-btn gtb-filter" data-filter="atrasado" onclick="setGanttFilter('atrasado')">Atrasadas</button>
+            <button class="gtb-btn gtb-filter" data-filter="sinmov" onclick="setGanttFilter('sinmov')">Sin movimiento</button>
             <button class="gtb-btn gtb-filter" data-filter="hito" onclick="setGanttFilter('hito')">◆ Hitos</button>
           </div>
 
@@ -1482,6 +1758,19 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           <div class="gtb-stat hidden" id="gst-hito"><span class="num">0</span> hitos</div>
           <div class="gtb-stat success hidden" id="gst-done"><span class="num">0</span> ✓</div>
         </div>
+
+        <!-- ── Capas operativas (overlays) ── -->
+        <div class="gantt-layers" id="gantt-layers">
+          <span class="lyr-tag">Capas</span>
+          <button class="lyr-toggle active" data-layer="health" onclick="toggleGanttLayer('health')"><span class="lyr-dot"></span>Salud</button>
+          <button class="lyr-toggle" data-layer="plan" onclick="toggleGanttLayer('plan')"><span class="lyr-dot"></span>Plan baseline</button>
+          <button class="lyr-toggle" data-layer="forecast" onclick="toggleGanttLayer('forecast')"><span class="lyr-dot"></span>Forecast</button>
+          <button class="lyr-toggle" data-layer="critica" onclick="toggleGanttLayer('critica')"><span class="lyr-dot"></span>Ruta crítica</button>
+          <button class="lyr-toggle" data-layer="sinmov" onclick="toggleGanttLayer('sinmov')"><span class="lyr-dot"></span>Sin movimiento</button>
+        </div>
+
+        <!-- ── Alertas operativas (top 6) ── -->
+        <div class="gantt-alerts hidden" id="gantt-alerts"></div>
 
         <!-- ── Dropzone import ── -->
         <label class="import-drop" for="gantt-file-input" id="gantt-drop"
@@ -1508,6 +1797,9 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
         <!-- ── Import progress (hidden por defecto) ── -->
         <div class="import-progress hidden" id="import-progress"></div>
+
+        <!-- ── Validación post-import (hidden por defecto) ── -->
+        <div class="import-report hidden" id="import-report"></div>
 
         <!-- ── Board visual (lista + timeline) ── -->
         <div id="gantt-loading" class="loading"><span class="spinner"></span>Cargando cronograma…</div>
@@ -1766,6 +2058,24 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
     </div>
 
   </div><!-- /main-wrap -->
+
+  <!-- ═══ TASK DRILL-DOWN PANEL ═══ -->
+  <div class="task-panel-backdrop" id="task-panel-backdrop" onclick="cerrarTaskPanel()"></div>
+  <aside class="task-panel" id="task-panel" aria-hidden="true">
+    <div class="tp-head">
+      <span class="h-pill h-idle" id="tp-health"></span>
+      <div class="ttl">
+        <div class="lvl" id="tp-lvl">Tarea</div>
+        <div class="nm" id="tp-name">—</div>
+      </div>
+      <button class="close" onclick="cerrarTaskPanel()" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="tp-body" id="tp-body">
+      <!-- contenido inyectado por abrirTaskPanel -->
+    </div>
+  </aside>
 </div><!-- /app -->
 
 <!-- PDF PREVIEW (oculto, solo para generación) -->
@@ -2677,6 +2987,14 @@ async function importarGanttSmart(file) {
 
     if (!parsed.length) throw new Error('No se detectaron tareas en el archivo.');
 
+    // ── Validación pre-upload: filtrar fechas inversas, ordenar y reportar ──
+    const warns = validarImportadas(parsed);
+    parsed = parsed.filter(t => {
+      if (t.fecha_ini && t.fecha_fin && new Date(t.fecha_fin) < new Date(t.fecha_ini)) return false;
+      return true;
+    });
+    showImportReport(warns);
+
     const fases   = parsed.filter(t => t.nivel === 1).length;
     const hitos   = parsed.filter(t => t.es_hito).length;
     setImportProgress(`Detectadas <b>${parsed.length} tareas</b> · ${fases} fases · ${hitos} hitos. Subiendo a Supabase…`, 'info');
@@ -2735,9 +3053,468 @@ function clearImportProgress() {
 }
 
 // ═══════════════════════════════════════════════
-// PHASE 3 · GANTT BOARD RENDER
+// PHASE 4 · GANTT INTELLIGENCE ENGINE
 // ═══════════════════════════════════════════════
-const _ganttState = { tasks: [], scale: 'month', filter: 'all' };
+
+// State global del Gantt (incluye capas Phase 4)
+const _ganttState = {
+  tasks: [],
+  scale: 'month',
+  filter: 'all',
+  layers: { health:true, plan:false, forecast:false, critica:false, sinmov:false },
+  selectedId: null
+};
+
+// ── ANALIZADOR DE TAREA (núcleo del motor) ──
+// Devuelve metadata enriquecida: salud, status, desviación, forecast, sin_movimiento, prob_atraso
+function analizarTarea(t, hoy) {
+  const today = hoy || new Date(); today.setHours(0,0,0,0);
+  const pct = parseFloat(t.pct_avance||0);
+  const ini = t.fecha_inicio_base ? new Date(t.fecha_inicio_base) : null;
+  const fin = t.fecha_fin_base ? new Date(t.fecha_fin_base) : null;
+
+  const r = {
+    pct, ini, fin,
+    pctEsperado: null,
+    desviacion: null,            // pct_real - pct_esperado (negativo = atrasada)
+    diasAtraso: 0,               // días de retraso (>0 si tarde)
+    sinMovDias: null,            // días desde último updated_at
+    forecast: null,              // { fechaFin: Date, diasRetraso: number, prob: number }
+    status: 'sin_fecha',         // sin_fecha | no_iniciada | en_plan | riesgo | critica | bloqueada | completa
+    salud: 'idle'                // good | warn | bad | block | idle | done
+  };
+
+  if (!ini || !fin) {
+    if (pct >= 100) { r.status = 'completa'; r.salud = 'done'; }
+    return r;
+  }
+
+  const durTotalDias = Math.max(1, (fin - ini) / 86400000 + 1);
+
+  // pct esperado por interpolación lineal
+  if (today < ini) {
+    r.pctEsperado = 0;
+    r.status = 'no_iniciada';
+    r.salud = 'idle';
+  } else if (today >= fin) {
+    r.pctEsperado = 100;
+  } else {
+    const transc = (today - ini) / 86400000;
+    r.pctEsperado = Math.min(100, Math.max(0, (transc / durTotalDias) * 100));
+  }
+
+  r.desviacion = pct - r.pctEsperado;
+
+  // días de atraso = a cuántos días equivale la desviación negativa
+  if (r.desviacion < 0) {
+    const daysPerPct = durTotalDias / 100;
+    r.diasAtraso = -r.desviacion * daysPerPct;
+  }
+
+  // sin movimiento: días desde updated_at (si existe)
+  if (t.updated_at) {
+    const upd = new Date(t.updated_at);
+    if (!isNaN(upd)) {
+      const ago = (today - upd) / 86400000;
+      r.sinMovDias = Math.max(0, ago);
+    }
+  }
+
+  // Forecast: predecir fecha fin real basado en velocidad actual
+  if (pct >= 100) {
+    r.status = 'completa'; r.salud = 'done';
+  } else if (today < ini) {
+    // tarea futura
+    r.forecast = { fechaFin: fin, diasRetraso: 0, prob: 0 };
+  } else {
+    const transc = Math.max(1, (today - ini) / 86400000);
+    if (pct < 1) {
+      // No empezó (debió iniciar): fuerte riesgo
+      const diasFutFromToday = (fin - today) / 86400000;
+      // si no se ha iniciado y ya pasó el inicio, asumimos misma duración → late = días transcurridos
+      const fcFin = new Date(today.getTime() + durTotalDias * 86400000);
+      const diasRetraso = (fcFin - fin) / 86400000;
+      r.forecast = { fechaFin: fcFin, diasRetraso, prob: Math.min(95, 60 + transc*4) };
+      r.status = transc > 3 ? 'critica' : 'riesgo';
+      r.salud = transc > 3 ? 'bad' : 'warn';
+    } else {
+      // velocidad real (pct por día) vs velocidad planeada
+      const velReal = pct / transc;
+      const velPlan = 100 / durTotalDias;
+      const diasParaCompletar = (100 - pct) / Math.max(velReal, 0.01);
+      const fcFin = new Date(today.getTime() + diasParaCompletar * 86400000);
+      const diasRetraso = (fcFin - fin) / 86400000;
+      // probabilidad de atraso: cuanto más lento vaya, más alta
+      let prob = 0;
+      if (velReal < velPlan) {
+        prob = Math.min(95, ((velPlan - velReal) / velPlan) * 130 + transc*1.5);
+      } else if (r.desviacion < -5) {
+        prob = Math.min(70, -r.desviacion * 3);
+      }
+      r.forecast = { fechaFin: fcFin, diasRetraso, prob };
+    }
+  }
+
+  // Status & salud
+  if (r.status === 'sin_fecha' || r.status === 'completa' || r.status === 'no_iniciada') {
+    // ya asignados
+  } else if (today > fin && pct < 100) {
+    r.status = 'critica'; r.salud = 'bad';
+  } else if (r.sinMovDias !== null && r.sinMovDias >= 5 && pct < 100 && pct > 0) {
+    r.status = 'bloqueada'; r.salud = 'block';
+  } else if (r.desviacion <= -15) {
+    r.status = 'critica'; r.salud = 'bad';
+  } else if (r.desviacion <= -5) {
+    r.status = 'riesgo'; r.salud = 'warn';
+  } else if (r.forecast && r.forecast.diasRetraso > 3 && r.forecast.prob >= 60) {
+    r.status = 'riesgo'; r.salud = 'warn';
+  } else {
+    r.status = 'en_plan'; r.salud = 'good';
+  }
+
+  // Si está completa, ya salud = done
+  if (pct >= 100) { r.status = 'completa'; r.salud = 'done'; }
+
+  return r;
+}
+
+// Cache de análisis por tarea (re-computado en cada render)
+let _ganttAnalysis = new Map();
+
+function analizarTodas() {
+  _ganttAnalysis.clear();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  (_ganttState.tasks || []).forEach(t => {
+    const id = t.id || t.orden;
+    _ganttAnalysis.set(id, analizarTarea(t, hoy));
+  });
+}
+
+function getAnalysis(t) {
+  const id = t.id || t.orden;
+  return _ganttAnalysis.get(id) || analizarTarea(t, new Date());
+}
+
+// ── Iconos SVG inline reutilizables ──
+const _gIcons = {
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+  block:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+  pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  diamond:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12 12 2"/></svg>',
+  chevron:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+};
+
+// ── Render ALERTAS OPERATIVAS (top 6) ──
+function renderGanttAlerts() {
+  const el = document.getElementById('gantt-alerts');
+  if (!el) return;
+  const tasks = _ganttState.tasks || [];
+  if (!tasks.length) { el.classList.add('hidden'); return; }
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const alerts = [];
+
+  // 1) Tareas críticas atrasadas (hard stop) — máximo 1 agregado
+  const atrasadasCrit = tasks.filter(t => {
+    const a = getAnalysis(t);
+    return a.status === 'critica' && a.diasAtraso > 0;
+  });
+  if (atrasadasCrit.length > 0) {
+    alerts.push({
+      tone:'crit', score:100, icon:_gIcons.warn,
+      title: `${atrasadasCrit.length} tarea${atrasadasCrit.length===1?'':'s'} en estado CRÍTICO`,
+      desc: `Fecha fin superada con avance incompleto · clic para revisar`,
+      onclick: () => { setGanttFilter('atrasado'); }
+    });
+  }
+
+  // 2) Hitos en riesgo (vencen en <=14 días pero forecast late >0)
+  const hitosRiesgo = tasks.filter(t => {
+    if (!t.es_hito || !t.fecha_fin_base) return false;
+    const fin = new Date(t.fecha_fin_base);
+    const diff = (fin - hoy) / 86400000;
+    const a = getAnalysis(t);
+    return diff >= 0 && diff <= 21 && (a.forecast && a.forecast.diasRetraso > 0);
+  });
+  if (hitosRiesgo.length > 0) {
+    const next = hitosRiesgo.sort((a,b) => new Date(a.fecha_fin_base) - new Date(b.fecha_fin_base))[0];
+    const a = getAnalysis(next);
+    alerts.push({
+      tone:'crit', score:95, icon:_gIcons.flag,
+      title:`Hito en riesgo · ${(next.nombre_tarea||'').slice(0,40)}`,
+      desc:`Fecha plan ${next.fecha_fin_base} · forecast ${a.forecast?.diasRetraso>0?'+'+a.forecast.diasRetraso.toFixed(0)+'d tarde':'OK'}`,
+      onclick: () => abrirTaskPanel(next)
+    });
+  }
+
+  // 3) Tareas sin movimiento (≥5 días sin update y pct<100 y >0)
+  const sinMov = tasks.filter(t => {
+    const a = getAnalysis(t);
+    return a.sinMovDias !== null && a.sinMovDias >= 5 && a.pct > 0 && a.pct < 100;
+  });
+  if (sinMov.length > 0) {
+    alerts.push({
+      tone:'warn', score:70, icon:_gIcons.block,
+      title:`${sinMov.length} tarea${sinMov.length===1?'':'s'} sin movimiento`,
+      desc:`Más de 5 días sin actualización · posible bloqueo`,
+      onclick: () => setGanttFilter('sinmov')
+    });
+  }
+
+  // 4) Tareas con forecast late >3 días y prob ≥60%
+  const fcRisk = tasks.filter(t => {
+    const a = getAnalysis(t);
+    return a.forecast && a.forecast.diasRetraso >= 3 && a.forecast.prob >= 60 && a.pct < 100;
+  });
+  if (fcRisk.length > 0) {
+    const top = fcRisk.sort((a,b) => getAnalysis(b).forecast.prob - getAnalysis(a).forecast.prob)[0];
+    const ana = getAnalysis(top);
+    alerts.push({
+      tone:'warn', score:65, icon:_gIcons.trend,
+      title:`Forecast crítico · ${(top.nombre_tarea||'').slice(0,40)}`,
+      desc:`${ana.forecast.prob.toFixed(0)}% probabilidad de terminar ${ana.forecast.diasRetraso.toFixed(0)}d tarde`,
+      onclick: () => abrirTaskPanel(top)
+    });
+  }
+
+  // 5) Tareas críticas (es_critico) en riesgo
+  const critEnRiesgo = tasks.filter(t => t.es_critico && (getAnalysis(t).salud === 'warn' || getAnalysis(t).salud === 'bad'));
+  if (critEnRiesgo.length > 0) {
+    alerts.push({
+      tone:'crit', score:90, icon:_gIcons.pulse,
+      title:`Ruta crítica afectada · ${critEnRiesgo.length} tarea${critEnRiesgo.length===1?'':'s'}`,
+      desc:`Tareas marcadas como críticas con desviación`,
+      onclick: () => setGanttFilter('critico')
+    });
+  }
+
+  // 6) Tareas en semana actual no iniciadas
+  const sevenDays = new Date(hoy.getTime() + 7*86400000);
+  const semanaPendiente = tasks.filter(t => {
+    if (!t.fecha_inicio_base) return false;
+    const ini = new Date(t.fecha_inicio_base);
+    return ini >= hoy && ini < sevenDays && (parseFloat(t.pct_avance||0) === 0);
+  });
+  if (semanaPendiente.length > 0) {
+    alerts.push({
+      tone:'info', score:40, icon:_gIcons.clock,
+      title:`${semanaPendiente.length} tarea${semanaPendiente.length===1?'':'s'} arrancan esta semana`,
+      desc:`Verifica recursos y contratas asignadas`,
+      onclick: () => setGanttFilter('semana')
+    });
+  }
+
+  if (alerts.length === 0) {
+    el.classList.add('hidden');
+    return;
+  }
+
+  alerts.sort((a,b) => b.score - a.score);
+  el.classList.remove('hidden');
+  el.innerHTML = alerts.slice(0,6).map((a,i) => `<button type="button" class="galert ${a.tone}" data-i="${i}">
+    <span class="gicon">${a.icon}</span>
+    <span class="gtxt"><div class="gt">${a.title}</div><div class="gd">${a.desc}</div></span>
+    <span class="gchev">${_gIcons.chevron}</span>
+  </button>`).join('');
+  // attach handlers
+  Array.from(el.children).forEach((btn, idx) => {
+    btn.onclick = alerts[idx].onclick || (() => {});
+  });
+}
+
+// ── Toggle capa ──
+function toggleGanttLayer(layer) {
+  _ganttState.layers[layer] = !_ganttState.layers[layer];
+  document.querySelectorAll('.lyr-toggle').forEach(b => {
+    b.classList.toggle('active', _ganttState.layers[b.dataset.layer]);
+  });
+  renderGanttBoard();
+}
+
+// ── Drill-down panel ──
+function abrirTaskPanel(t) {
+  if (!t) return;
+  _ganttState.selectedId = t.id || t.orden;
+  const a = getAnalysis(t);
+  const panel = document.getElementById('task-panel');
+  const bg = document.getElementById('task-panel-backdrop');
+  if (!panel) return;
+
+  // Header
+  const hp = document.getElementById('tp-health');
+  hp.className = 'h-pill h-' + a.salud;
+  document.getElementById('tp-lvl').textContent = t.es_hito ? 'Hito' : (t.nivel===1?'Fase':t.nivel===2?'Subfase':'Tarea') + (t.es_critico?' · Crítica':'');
+  document.getElementById('tp-name').textContent = t.nombre_tarea || '—';
+
+  // Body
+  const dur = t.duracion_dias != null ? t.duracion_dias + 'd' : '—';
+  const ini = t.fecha_inicio_base || '—';
+  const fin = t.fecha_fin_base || '—';
+  const pct = parseFloat(t.pct_avance||0);
+  const pctEsp = a.pctEsperado != null ? a.pctEsperado.toFixed(1) : '—';
+  const desv = a.desviacion != null ? (a.desviacion>=0?'+':'') + a.desviacion.toFixed(1) : '—';
+  const sinMov = a.sinMovDias != null ? a.sinMovDias.toFixed(0) + 'd' : '—';
+
+  // SPI por tarea = pct/pct_esperado
+  let spi = '—', spiClass = '';
+  if (a.pctEsperado != null && a.pctEsperado > 0) {
+    const s = pct / a.pctEsperado;
+    spi = s.toFixed(2);
+    spiClass = s >= 0.96 ? 'good' : s >= 0.85 ? 'warn' : 'bad';
+  }
+  const desvClass = a.desviacion == null ? '' : a.desviacion >= -2 ? 'good' : a.desviacion >= -8 ? 'warn' : 'bad';
+
+  // Forecast block
+  let fcHtml = '';
+  if (pct >= 100) {
+    fcHtml = `<div class="tp-fc early"><div class="tp-fc-row"><div class="tp-fc-t">Tarea completada</div><div class="tp-fc-v">✓</div></div><div class="tp-fc-d">100% ejecutado</div></div>`;
+  } else if (a.forecast) {
+    const fc = a.forecast;
+    const lateClass = fc.diasRetraso > 2 ? 'late' : fc.diasRetraso < -1 ? 'early' : 'ok';
+    const fcDate = fc.fechaFin ? fc.fechaFin.toISOString().slice(0,10) : '—';
+    const probTxt = fc.prob > 5 ? `<span class="tp-fc-prob">${fc.prob.toFixed(0)}% prob.</span>` : '';
+    const dRetraso = fc.diasRetraso > 0
+      ? `${fc.diasRetraso.toFixed(0)}d tarde respecto a fecha fin plan (${fin})`
+      : fc.diasRetraso < -1
+        ? `${Math.abs(fc.diasRetraso).toFixed(0)}d adelantada respecto a plan`
+        : `En línea con la fecha fin plan`;
+    fcHtml = `<div class="tp-fc ${lateClass}">
+      <div class="tp-fc-row"><div class="tp-fc-t">Forecast fin</div><div class="tp-fc-v">${fcDate}</div></div>
+      <div class="tp-fc-d">${dRetraso}</div>
+      ${probTxt}
+    </div>`;
+  } else {
+    fcHtml = `<div class="tp-fc ok"><div class="tp-fc-row"><div class="tp-fc-t">Forecast</div><div class="tp-fc-v">—</div></div><div class="tp-fc-d">Sin datos suficientes para predecir.</div></div>`;
+  }
+
+  // Status label
+  const statusLabels = { 'sin_fecha':'Sin fecha','no_iniciada':'No iniciada','en_plan':'En plan','riesgo':'Riesgo creciente','critica':'Crítica','bloqueada':'Bloqueada','completa':'Completa' };
+
+  // Related items (reportes/riesgos)
+  const sources = _dashSources || { reportes:[], riesgos:[] };
+  const nameLow = (t.nombre_tarea||'').toLowerCase();
+  const keywords = nameLow.split(/\s+/).filter(w => w.length >= 5).slice(0,3);
+  const relReportes = (sources.reportes||[]).filter(r =>
+    keywords.some(k => (r.actividad||'').toLowerCase().includes(k) || (r.observaciones||'').toLowerCase().includes(k))
+  ).slice(0,3);
+  const relRiesgos = (sources.riesgos||[]).filter(r =>
+    keywords.some(k => (r.descripcion||'').toLowerCase().includes(k))
+  ).slice(0,3);
+
+  let relHtml = '';
+  if (relReportes.length === 0 && relRiesgos.length === 0) {
+    relHtml = `<div class="empty">No se encontraron reportes ni riesgos asociados por nombre.</div>`;
+  } else {
+    relHtml = [
+      ...relRiesgos.map(r => `<div class="tp-rel-row kind-riesgo"><span class="rel-t">Riesgo ${r.nivel||'M'}</span><span>${(r.descripcion||'').slice(0,80)}</span></div>`),
+      ...relReportes.map(r => `<div class="tp-rel-row kind-reporte"><span class="rel-t">Reporte ${r.fecha_reporte||''}</span><span>${(r.actividad||'').slice(0,80)}</span></div>`)
+    ].join('');
+  }
+
+  // Inyectar body
+  document.getElementById('tp-body').innerHTML = `
+    <div class="tp-grid">
+      <div class="tp-stat"><div class="lbl">Estado</div><div class="val" style="font-size:14px">${statusLabels[a.status]||'—'}</div><div class="sub">${t.es_critico?'En ruta crítica':''}</div></div>
+      <div class="tp-stat ${desvClass}"><div class="lbl">Desviación</div><div class="val">${desv}%</div><div class="sub">vs ${pctEsp}% esperado</div></div>
+      <div class="tp-stat ${spiClass}"><div class="lbl">SPI tarea</div><div class="val">${spi}</div><div class="sub">${spiClass==='good'?'Saludable':spiClass==='warn'?'Atención':spiClass==='bad'?'Crítico':'—'}</div></div>
+      <div class="tp-stat"><div class="lbl">Sin movimiento</div><div class="val" style="font-size:18px">${sinMov}</div><div class="sub">desde última actualización</div></div>
+    </div>
+
+    <div class="tp-section">
+      <h4>${_gIcons.trend} Avance</h4>
+      <div class="tp-progress">
+        <div class="real" style="width:${Math.min(100,Math.max(0,pct))}%">${pct.toFixed(0)}%</div>
+        ${a.pctEsperado!=null?`<div class="ref" style="left:${Math.min(100,a.pctEsperado)}%" data-lbl="Esperado ${pctEsp}%"></div>`:''}
+      </div>
+    </div>
+
+    <div class="tp-section">
+      <h4>${_gIcons.clock} Cronograma</h4>
+      <div class="tp-grid">
+        <div class="tp-stat"><div class="lbl">Inicio plan</div><div class="val" style="font-size:13px">${ini}</div></div>
+        <div class="tp-stat"><div class="lbl">Fin plan</div><div class="val" style="font-size:13px">${fin}</div></div>
+        <div class="tp-stat" style="grid-column:span 2"><div class="lbl">Duración</div><div class="val" style="font-size:14px">${dur}</div></div>
+      </div>
+    </div>
+
+    <div class="tp-section">
+      <h4>${_gIcons.pulse} Pronóstico</h4>
+      ${fcHtml}
+    </div>
+
+    <div class="tp-section">
+      <h4>${_gIcons.warn} Relacionados</h4>
+      <div class="tp-related">${relHtml}</div>
+    </div>
+
+    <div class="tp-actions">
+      <button class="btn btn-teal" onclick="editarAvanceGantt('${t.id||''}',${pct});setTimeout(cerrarTaskPanel,200)">Actualizar avance</button>
+      <button class="btn btn-outline" onclick="cerrarTaskPanel()">Cerrar</button>
+    </div>
+  `;
+
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  bg.classList.add('open');
+
+  // Marcar fila seleccionada
+  document.querySelectorAll('.gantt-row.selected,.gantt-time-row.selected').forEach(el => el.classList.remove('selected'));
+  const row = document.querySelector(`.gantt-row[data-id="${t.id||''}"]`);
+  const trow = document.querySelector(`.gantt-time-row[data-id="${t.id||''}"]`);
+  if (row) row.classList.add('selected');
+  if (trow) trow.classList.add('selected');
+}
+
+function cerrarTaskPanel() {
+  const panel = document.getElementById('task-panel');
+  const bg = document.getElementById('task-panel-backdrop');
+  if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); }
+  if (bg) bg.classList.remove('open');
+  _ganttState.selectedId = null;
+  document.querySelectorAll('.gantt-row.selected,.gantt-time-row.selected').forEach(el => el.classList.remove('selected'));
+}
+
+// ── Validación al importar ──
+function validarImportadas(parsed) {
+  const warns = [];
+  const names = new Map();
+  let conFinAntes = 0, sinFechas = 0, duraciónNegativa = 0;
+
+  parsed.forEach((t,i) => {
+    const k = (t.nombre||'').toLowerCase().trim();
+    if (k) names.set(k, (names.get(k)||0) + 1);
+    if (t.fecha_ini && t.fecha_fin) {
+      if (new Date(t.fecha_fin) < new Date(t.fecha_ini)) conFinAntes++;
+    }
+    if (!t.fecha_ini || !t.fecha_fin) sinFechas++;
+    if (t.duracion_dias != null && t.duracion_dias < 0) duraciónNegativa++;
+  });
+
+  const duplicados = [...names.entries()].filter(([,c]) => c > 1).length;
+  if (duplicados) warns.push(`<b>${duplicados}</b> tarea${duplicados===1?'':'s'} con nombre duplicado · revisa si son repeticiones`);
+  if (conFinAntes) warns.push(`<b>${conFinAntes}</b> tarea${conFinAntes===1?'':'s'} con fecha fin anterior al inicio · descartadas o requieren corrección`);
+  if (sinFechas) warns.push(`<b>${sinFechas}</b> tarea${sinFechas===1?'':'s'} sin fechas completas · no aparecerán en el timeline`);
+  if (duraciónNegativa) warns.push(`<b>${duraciónNegativa}</b> tarea${duraciónNegativa===1?'':'s'} con duración negativa`);
+  return warns;
+}
+
+function showImportReport(warns) {
+  const el = document.getElementById('import-report');
+  if (!el) return;
+  if (!warns || warns.length === 0) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <span class="close-x" onclick="document.getElementById('import-report').classList.add('hidden')">×</span>
+    <h5>${_gIcons.warn} Revisar inconsistencias detectadas</h5>
+    <ul>${warns.map(w => `<li>${w}</li>`).join('')}</ul>`;
+}
+
+// ═══════════════════════════════════════════════
+// PHASE 3 · GANTT BOARD RENDER (refactorizado en Phase 4)
+// ═══════════════════════════════════════════════
 
 function setGanttScale(scale) {
   _ganttState.scale = scale;
@@ -2763,16 +3540,41 @@ function renderGanttBoard() {
       Arrastra un PDF de MS Project, un Excel (.xlsx) o un CSV en la zona de carga.
     </div>`;
     updateGanttStats(all);
+    renderGanttAlerts();
     return;
   }
 
-  const hoyStr = new Date().toISOString().slice(0,10);
+  // Re-analiza todas las tareas con el motor de inteligencia
+  analizarTodas();
+
+  const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
+  const hoyStr = hoyDate.toISOString().slice(0,10);
+  const sevenAhead = new Date(hoyDate.getTime() + 7*86400000);
+
   const tasks = all.filter(t => {
+    const a = getAnalysis(t);
     if (_ganttState.filter === 'critico')  return t.es_critico;
     if (_ganttState.filter === 'hito')     return t.es_hito;
     if (_ganttState.filter === 'atrasado') return parseFloat(t.pct_avance||0) < 100 && t.fecha_fin_base && t.fecha_fin_base < hoyStr;
+    if (_ganttState.filter === 'sinmov')   return a.sinMovDias !== null && a.sinMovDias >= 5 && a.pct > 0 && a.pct < 100;
+    if (_ganttState.filter === 'semana') {
+      if (!t.fecha_inicio_base || !t.fecha_fin_base) return false;
+      const ini = new Date(t.fecha_inicio_base), fin = new Date(t.fecha_fin_base);
+      return ini <= sevenAhead && fin >= hoyDate; // tareas activas en los próximos 7 días
+    }
     return true;
   });
+
+  // Ordenar Modo Semana: prioridad alta primero (crítica > riesgo > en_plan)
+  if (_ganttState.filter === 'semana') {
+    const prio = { critica:0, riesgo:1, bloqueada:2, en_plan:3, no_iniciada:4, completa:5 };
+    tasks.sort((a,b) => {
+      const aa = getAnalysis(a), bb = getAnalysis(b);
+      const pa = prio[aa.status]??9, pb = prio[bb.status]??9;
+      if (pa !== pb) return pa - pb;
+      return new Date(a.fecha_inicio_base||0) - new Date(b.fecha_inicio_base||0);
+    });
+  }
 
   if (!tasks.length) {
     board.innerHTML = `<div class="gantt-empty-board" style="grid-column:1/-1">
@@ -2781,6 +3583,7 @@ function renderGanttBoard() {
       Cambia a "Todas" para ver el cronograma completo.
     </div>`;
     updateGanttStats(all);
+    renderGanttAlerts();
     return;
   }
 
@@ -2846,14 +3649,21 @@ function renderGanttBoard() {
     const isHito = !!t.es_hito;
     const isCrit = !!t.es_critico;
     const pct = parseFloat(t.pct_avance||0);
-    const isLate = pct < 100 && t.fecha_fin_base && t.fecha_fin_base < hoyStr;
+    const a = getAnalysis(t);
+    const isLate = a.status === 'critica' && pct < 100;
+    const isSel = (_ganttState.selectedId && (t.id||t.orden) == _ganttState.selectedId);
+    const dimmed = (_ganttState.layers.critica && !isCrit) || (_ganttState.layers.sinmov && !(a.sinMovDias>=5));
+    // Health pill (siempre visible si la capa Salud está activa)
+    const healthPill = _ganttState.layers.health
+      ? `<span class="h-pill h-${a.salud}" title="${a.status}"></span>`
+      : '';
     const chips = [];
     if (isHito) chips.push('<span class="chip hito">◆ HITO</span>');
     if (isCrit) chips.push('<span class="chip crit">CRIT</span>');
     if (isLate) chips.push('<span class="chip late">ATRASO</span>');
-    return `<div class="gantt-row lvl-${lvl}" data-id="${t.id||''}">
+    return `<div class="gantt-row lvl-${lvl} ${isSel?'selected':''}" data-id="${t.id||t.orden||''}" style="${dimmed?'opacity:.45':''}" onclick="abrirTaskPanelById('${t.id||t.orden||''}')">
       <div class="gid">${t.orden || i+1}</div>
-      <div class="gname">${chips.join('')}${(t.nombre_tarea||'').replace(/</g,'&lt;')}</div>
+      <div class="gname">${healthPill}${chips.join('')}${(t.nombre_tarea||'').replace(/</g,'&lt;')}</div>
       <div class="gdur">${t.duracion_dias!=null?t.duracion_dias+'d':'—'}</div>
       <div class="gpct">${pct.toFixed(0)}%</div>
     </div>`;
@@ -2874,29 +3684,50 @@ function renderGanttBoard() {
     const isCrit = !!t.es_critico;
     const isSummary = lvl === 1 || lvl === 2;
     const pct = parseFloat(t.pct_avance||0);
-    const isLate = pct < 100 && t.fecha_fin_base && t.fecha_fin_base < hoyStr;
+    const a = getAnalysis(t);
+    const isLate = a.status === 'critica' && pct < 100;
     const isDone = pct >= 100;
+    const isSel = (_ganttState.selectedId && (t.id||t.orden) == _ganttState.selectedId);
+    const dimmed = (_ganttState.layers.critica && !isCrit) || (_ganttState.layers.sinmov && !(a.sinMovDias>=5));
 
-    let bar = '';
+    let pieces = '';
     if (t.fecha_inicio_base && t.fecha_fin_base) {
       const ini = new Date(t.fecha_inicio_base), fin = new Date(t.fecha_fin_base);
       const leftPx = ((ini - minD) / 86400000) * dayW;
       const widthPx = Math.max(_ganttState.scale==='quarter'?4:8, ((fin - ini + 86400000) / 86400000) * dayW);
 
+      // Plan baseline (ghost) — solo si capa Plan está activa
+      if (_ganttState.layers.plan && !isHito && !isSummary) {
+        pieces += `<div class="gantt-plan-bar" style="left:${leftPx}px;width:${widthPx}px"></div>`;
+      }
+
+      // Forecast (predicción de fin) — solo si capa Forecast activa y forecast tiene late >0
+      if (_ganttState.layers.forecast && !isHito && a.forecast && a.forecast.diasRetraso > 0 && pct < 100) {
+        const fcEnd = a.forecast.fechaFin;
+        if (fcEnd && fcEnd > fin) {
+          const fcLeftPx = ((ini - minD) / 86400000) * dayW;
+          const fcWidthPx = Math.max(8, ((fcEnd - ini) / 86400000) * dayW);
+          pieces += `<div class="gantt-forecast-bar ${a.forecast.diasRetraso>3?'late':''}" style="left:${fcLeftPx}px;width:${fcWidthPx}px" title="Forecast: termina ${fcEnd.toISOString().slice(0,10)} · ${a.forecast.diasRetraso.toFixed(0)}d tarde"></div>`;
+        }
+      }
+
+      // Barra principal o hito
       if (isHito) {
-        bar = `<div class="gantt-milestone ${isDone?'done':''}" style="left:${leftPx}px" title="${(t.nombre_tarea||'').replace(/"/g,'&quot;')} · ${t.fecha_inicio_base}"></div>`;
+        pieces += `<div class="gantt-milestone ${isDone?'done':''}" style="left:${leftPx}px" data-id="${t.id||t.orden||''}" title="${(t.nombre_tarea||'').replace(/"/g,'&quot;')} · ${t.fecha_inicio_base}" onclick="abrirTaskPanelById('${t.id||t.orden||''}');event.stopPropagation()"></div>`;
       } else {
         const cls = [
           isSummary ? 'summary' : (isLate ? 'late' : isCrit ? 'crit' : isDone ? 'done' : '')
         ].filter(Boolean).join(' ');
         const fillHtml = !isSummary ? `<div class="fill" style="width:${pct}%"></div>` : '';
         const labelHtml = (widthPx > 60 && !isSummary) ? `<div class="label">${(t.nombre_tarea||'').slice(0,40)}</div>` : '';
-        bar = `<div class="gantt-bar ${cls}" style="left:${leftPx}px;width:${widthPx}px" title="${(t.nombre_tarea||'').replace(/"/g,'&quot;')} · ${pct.toFixed(0)}% · ${t.fecha_inicio_base} → ${t.fecha_fin_base}">
+        const tooltip = `${(t.nombre_tarea||'').replace(/"/g,'&quot;')} · ${pct.toFixed(0)}% · ${t.fecha_inicio_base} → ${t.fecha_fin_base}` +
+          (a.forecast && a.forecast.diasRetraso>1 ? ` · forecast ${a.forecast.diasRetraso.toFixed(0)}d tarde (${a.forecast.prob.toFixed(0)}%)` : '');
+        pieces += `<div class="gantt-bar ${cls}" data-id="${t.id||t.orden||''}" style="left:${leftPx}px;width:${widthPx}px" title="${tooltip}" onclick="abrirTaskPanelById('${t.id||t.orden||''}');event.stopPropagation()">
           ${fillHtml}${labelHtml}
         </div>`;
       }
     }
-    rowsHtml += `<div class="gantt-time-row lvl-${lvl}" style="width:${totalW}px">${bar}</div>`;
+    rowsHtml += `<div class="gantt-time-row lvl-${lvl} ${isSel?'selected':''}" data-id="${t.id||t.orden||''}" style="width:${totalW}px;${dimmed?'opacity:.45':''}">${pieces}</div>`;
   });
 
   // Today line
@@ -2927,7 +3758,23 @@ function renderGanttBoard() {
   }
 
   updateGanttStats(all);
+  renderGanttAlerts();
 }
+
+// Helper para abrir el drill-down desde onclick inline
+function abrirTaskPanelById(id) {
+  if (!id) return;
+  const t = (_ganttState.tasks || []).find(x => String(x.id||x.orden) === String(id));
+  if (t) abrirTaskPanel(t);
+}
+
+// Cerrar drill-down con tecla Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('task-panel');
+    if (panel && panel.classList.contains('open')) cerrarTaskPanel();
+  }
+});
 
 function updateGanttStats(all) {
   const hoy = new Date().toISOString().slice(0,10);
