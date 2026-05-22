@@ -5851,7 +5851,8 @@ function autoDetectCategory(nombre, isMilestone) {
 }
 
 function autoDetectMedicion(nombre, categoria, isMilestone) {
-  if (isMilestone) return 'cumplimiento';
+  // Hitos por default: % manual (supervisor reporta avance progresivo)
+  if (isMilestone) return 'pct_manual';
   const meta = CAT_META[categoria];
   return (meta && meta.defaultTM) || 'pct_manual';
 }
