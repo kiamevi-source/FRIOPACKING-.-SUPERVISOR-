@@ -4547,8 +4547,9 @@ async function parseGanttPDF(file) {
   const pdf = await window.pdfjsLib.getDocument({data: buf}).promise;
   const tasks = [];
   const seenIds = new Set();
-  // Pattern: Id [%pct] Nombre Duración días weekday? dd/mm/yy weekday? dd/mm/yy
-  const rowRe = /^(\d+)\s+(?:(\d+)\s*%\s+)?(.+?)\s+(\d+)\s*d[ií]as?\s+(?:[a-záéíóú]+\.?\s+)?(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(?:[a-záéíóú]+\.?\s+)?(\d{1,2}\/\d{1,2}\/\d{2,4})\s*$/i;
+  // Pattern: Id [%pct] Nombre Duración días weekday? dd/mm/yy [HH:MM] weekday? dd/mm/yy [HH:MM] [predecesoras...]
+  // Soporta: fechas con hora opcional (08:00), predecesoras al final (16, 15FC+2 días, 12CC, etc.)
+  const rowRe = /^(\d+)\s+(?:(\d+)\s*%\s+)?(.+?)\s+(\d+)\s*d[ií]as?\s+(?:[a-záéíóú]+\.?\s+)?(\d{1,2}\/\d{1,2}\/\d{2,4})(?:\s+\d{1,2}:\d{2})?\s+(?:[a-záéíóú]+\.?\s+)?(\d{1,2}\/\d{1,2}\/\d{2,4})(?:\s+\d{1,2}:\d{2})?(?:\s+.+?)?\s*$/i;
 
   for (let p=1; p<=pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -9398,10 +9399,10 @@ let _dashSources = null;
     const noProj = document.getElementById('imp-pres-noproj');
     const projName = document.getElementById('imp-pres-projname');
     if(!projInfo || !noProj) return;
-    const hasProj = !!(window.currentProyecto && window.currentProyecto.nombre);
+    const hasProj = !!(currentProyecto && currentProyecto.nombre);
     projInfo.classList.toggle('hidden', !hasProj);
     noProj.classList.toggle('hidden', hasProj);
-    if(hasProj) projName.textContent = window.currentProyecto.nombre;
+    if(hasProj) projName.textContent = currentProyecto.nombre;
   }
 
   // ── UI: pasos del wizard ─────────────────────────────────────────
@@ -9422,7 +9423,7 @@ let _dashSources = null;
   // ── Onclick / Drag & drop / File select ──────────────────────────
   function handleFile(file){
     if(!file) return;
-    if(!window.currentProyecto || !window.currentProyecto.nombre){
+    if(!currentProyecto || !currentProyecto.nombre){
       try{ window.showToast('Seleccioná un proyecto antes de importar','3500','warn'); }catch(e){}
       refreshProjectIndicator();
       return;
@@ -9492,7 +9493,7 @@ let _dashSources = null;
     `).join('');
 
     document.getElementById('imp-pres-foot').textContent =
-      `Proyecto: ${window.currentProyecto.nombre} · Batch: ${_impBatch.slice(-8)} · ${_impRows.length} partidas`;
+      `Proyecto: ${currentProyecto.nombre} · Batch: ${_impBatch.slice(-8)} · ${_impRows.length} partidas`;
   }
 
   function escapeHtml(s){
@@ -9510,7 +9511,7 @@ let _dashSources = null;
   // ── Commit a Supabase ────────────────────────────────────────────
   window.impPresCommit = async function(){
     if(!_impRows.length){ try{ window.showToast('No hay partidas','3000','warn'); }catch(e){} return; }
-    if(!window.currentProyecto || !window.currentProyecto.nombre){
+    if(!currentProyecto || !currentProyecto.nombre){
       try{ window.showToast('Falta proyecto','3000','warn'); }catch(e){}
       return;
     }
@@ -9521,7 +9522,7 @@ let _dashSources = null;
     btn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></span> Importando…';
 
     try{
-      const projName = window.currentProyecto.nombre;
+      const projName = currentProyecto.nombre;
       const payload = _impRows.map(r => ({
         nombre_proyecto: projName,
         item: r.item || null,
