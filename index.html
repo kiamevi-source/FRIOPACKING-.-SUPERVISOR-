@@ -6175,7 +6175,12 @@ function mpUpdateRow(idx, field, value) {
     mpRender();
   }
   if (field === 'tipo_medicion') mpRender();
-  if (field === 'es_hito') mpRender();
+  if (field === 'es_hito') {
+    // Al togglear hito: recalcular tipo_medicion para que respete el default
+    // ('pct_manual' si es hito; el de la categoría si no lo es).
+    r.tipo_medicion = autoDetectMedicion(r.nombre, r.categoria, r.es_hito);
+    mpRender();
+  }
 }
 function mpUpdateSummary() {
   const sel = _mpState.rows.filter(r => r.isChecked).length;
