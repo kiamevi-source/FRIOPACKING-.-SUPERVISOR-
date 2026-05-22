@@ -4554,15 +4554,32 @@ async function parseGanttPDF(file) {
   for (let p=1; p<=pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const tc = await page.getTextContent();
-    // group by y
-    const rows = {};
+    // Agrupar items por proximidad de Y (tolerancia 2px).
+    // FIX: MS Project rendea los IDs de tarea 0.5px arriba del resto del texto
+    // de la fila. Math.round(y) los manda a buckets distintos y se pierden las
+    // filas. Por eso usamos clustering por proximidad.
+    const allItems = [];
     tc.items.forEach(it => {
       if (!it.str || !it.str.trim()) return;
-      const y = Math.round(it.transform[5]);
-      (rows[y] = rows[y] || []).push({x: it.transform[4], str: it.str});
+      allItems.push({y: it.transform[5], x: it.transform[4], str: it.str});
     });
-    Object.keys(rows).forEach(y => {
-      const items = rows[y].sort((a,b) => a.x - b.x);
+    allItems.sort((a,b) => b.y - a.y);  // descendente (PDF Y crece hacia arriba)
+    const Y_TOL = 2;
+    const rowsArr = [];
+    let curRow = null, curY = null;
+    for (const it of allItems) {
+      if (curY === null || Math.abs(it.y - curY) > Y_TOL) {
+        curRow = [];
+        rowsArr.push(curRow);
+        curY = it.y;
+      } else {
+        // ajustar curY al promedio para que el cluster crezca sin "drift"
+        curY = (curY + it.y) / 2;
+      }
+      curRow.push(it);
+    }
+    rowsArr.forEach(items => {
+      items.sort((a,b) => a.x - b.x);
       const line = items.map(r => r.str).join(' ').replace(/\s+/g,' ').trim();
       const m = line.match(rowRe);
       if (!m) return;
