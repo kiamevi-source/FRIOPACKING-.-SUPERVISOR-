@@ -3044,6 +3044,11 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
       <span>Riesgos</span>
       <span class="tab-badge hidden"></span>
     </button>
+    <button class="nav-tab" data-tab="imports" onclick="showTab('imports')">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+      <span>Imports</span>
+      <span class="tab-badge hidden"></span>
+    </button>
   </nav>
 
   <div class="main-wrap">
@@ -3575,6 +3580,121 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ══ IMPORTS · Fase 2.2 ══ -->
+    <div class="tab-content" id="tab-imports">
+
+      <!-- IMPORTADOR DE PRESUPUESTO -->
+      <div class="sec-card" id="imp-pres-card">
+        <div class="sec-head">
+          <span class="sec-title">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal-500);box-shadow:var(--sh-glow-teal);margin-right:8px;vertical-align:middle"></span>
+            Importar Presupuesto Comercial
+          </span>
+          <span style="font-size:11px;color:var(--text-2)">Venta · Costo · Margen comercial</span>
+        </div>
+        <div class="sec-body">
+
+          <!-- STEP 1: Selección de archivo -->
+          <div id="imp-pres-step1">
+            <div style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">
+              Subí el Excel de la propuesta económica (ej: <i>"JP Propuesta Económica - Cámara…xlsx"</i>).
+              El sistema lee la hoja <b>Resumen de Cuadro de Precio</b> y clasifica cada partida automáticamente.
+              Vos confirmás antes de guardar.
+            </div>
+
+            <div id="imp-pres-noproj" class="hidden" style="padding:14px;border-radius:var(--r);background:var(--warning-bg);border:1px solid var(--warning-2);color:var(--warning);font-size:12px;margin-bottom:12px">
+              <b>⚠ Falta seleccionar proyecto.</b> Andá al selector arriba y elegí un proyecto antes de importar.
+            </div>
+
+            <div id="imp-pres-projinfo" class="hidden" style="padding:10px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border);font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+              <svg style="width:18px;height:18px;color:var(--teal-600);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <span>Proyecto destino: <b id="imp-pres-projname" style="color:var(--text)">—</b></span>
+            </div>
+
+            <div id="imp-pres-drop" style="border:2px dashed var(--border-strong);border-radius:var(--r-md);padding:36px 16px;text-align:center;cursor:pointer;transition:all var(--d) var(--ease);background:var(--surface-2)">
+              <div style="font-size:42px;line-height:1;margin-bottom:10px">📂</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text)">Arrastrá el Excel acá</div>
+              <div style="font-size:12px;color:var(--text-2);margin-top:4px">o hacé click para seleccionar · .xlsx · Detecta automáticamente la hoja Resumen</div>
+              <input type="file" id="imp-pres-file" accept=".xlsx,.xls" style="display:none">
+            </div>
+          </div>
+
+          <!-- STEP 2: Preview -->
+          <div id="imp-pres-step2" class="hidden">
+            <div class="kpi-grid" id="imp-pres-summary" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px"></div>
+
+            <div style="padding:10px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border);font-size:12px;margin-bottom:12px;color:var(--text-2)">
+              Revisá cada partida. Podés cambiar la <b>categoría</b> del dropdown si el sistema clasificó mal. Cuando estés OK, dale <b>Importar</b>.
+            </div>
+
+            <div style="border:1px solid var(--border);border-radius:var(--r);overflow:auto;max-height:55vh;background:var(--surface)">
+              <table id="imp-pres-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead style="background:var(--surface-2);position:sticky;top:0;z-index:5">
+                  <tr style="text-align:left">
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Ítem</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Descripción</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Und</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Cant.</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Costo U</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Costo Total</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Margen</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Venta Total</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Categoría</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap">
+              <div style="font-size:11px;color:var(--text-3)" id="imp-pres-foot">—</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline" onclick="impPresReset()">← Volver</button>
+                <button class="btn btn-primary" id="imp-pres-commit-btn" onclick="impPresCommit()">Importar a Supabase →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Result -->
+          <div id="imp-pres-step3" class="hidden">
+            <div id="imp-pres-result"></div>
+            <div style="margin-top:14px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="impPresReset()">Importar otro</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PRÓXIMOS IMPORTADORES (placeholders, se construyen en próximas fases) -->
+      <div class="sec-card" style="opacity:.55">
+        <div class="sec-head">
+          <span class="sec-title">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-3);margin-right:8px;vertical-align:middle"></span>
+            Importar Gantt
+          </span>
+          <span style="font-size:11px;color:var(--text-3)">Próximamente · Fase 2.1</span>
+        </div>
+        <div class="sec-body" style="color:var(--text-2);font-size:12px">
+          Carga del cronograma MS Project o PDF. Detecta equipos, válvulas, materiales, licitaciones, frentes y pruebas automáticamente desde la jerarquía del Gantt.
+        </div>
+      </div>
+
+      <div class="sec-card" style="opacity:.55">
+        <div class="sec-head">
+          <span class="sec-title">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-3);margin-right:8px;vertical-align:middle"></span>
+            Importar Nisira (REQ · OC · Adelantos · Materiales)
+          </span>
+          <span style="font-size:11px;color:var(--text-3)">Próximamente · Fase 2.3</span>
+        </div>
+        <div class="sec-body" style="color:var(--text-2);font-size:12px">
+          Carga del export de Nisira (Excel). Cruza con el Gantt para activar los flags ✓REQ ✓OC ✓Adelanto en cada equipo y material.
+        </div>
+      </div>
+
     </div>
 
   </div><!-- /main-wrap -->
@@ -9078,6 +9198,466 @@ function renderFeed(sources) {
 // Estado global compartido para Phase 2
 let _dashCtx = null;
 let _dashSources = null;
+
+// ═══════════════════════════════════════════════════════════════════
+// IMPORTADOR PRESUPUESTO COMERCIAL · FASE 2.2
+// Lee Excel "Resumen de Cuadro de Precio" y persiste partidas
+// en la tabla `presupuestos` de Supabase (creada en Fase 1).
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+
+  // ── Estado del importador ────────────────────────────────────────
+  let _impRows = [];          // partidas parseadas (editables)
+  let _impBatch = '';
+
+  const CATS = ['equipo','infraestructura','instalacion','tuberia','electrico','pem','gastos_generales','staff','otro'];
+  const CAT_LABELS = {
+    equipo:'Equipo', infraestructura:'Infraestructura', instalacion:'Instalación',
+    tuberia:'Tubería', electrico:'Eléctrico', pem:'PEM',
+    gastos_generales:'Gastos Generales', staff:'Staff', otro:'Otro'
+  };
+  const CAT_COLORS = {
+    equipo:'#2563eb', infraestructura:'#db2777', instalacion:'#d97706',
+    tuberia:'#4f46e5', electrico:'#dc2626', pem:'#059669',
+    gastos_generales:'#9333ea', staff:'#0891b2', otro:'#64748b'
+  };
+
+  // ── Clasificador heurístico ──────────────────────────────────────
+  function classifyPartida(descripcion, hoja, subcat){
+    const d = (descripcion||'').toLowerCase() + ' ' + (subcat||'').toLowerCase();
+    const h = (hoja||'').toLowerCase();
+    const hay = (...keys) => keys.some(k => d.includes(k));
+
+    if(h.includes('gastos generales') || h.includes('staff')){
+      if(hay('residente','supervis','ingeniero','jefe')) return 'staff';
+      return 'gastos_generales';
+    }
+    if(h.includes('tub') && (h.includes('cu') || h.includes('cobre') || h.includes('aislamiento'))) return 'tuberia';
+    if(h.includes('material') && h.includes('electric')) return 'electrico';
+
+    if(hay('residente','supervis','viático','viatico','jefe de obra')) return 'staff';
+    if(hay('movilidad','epp','examen méd','examen med','sctr','combustible','hospedaje','alquiler de grúa','alquiler de grua','retiro de desechos')) return 'gastos_generales';
+    if(hay('puesta en marcha','pem','refrigerante','carga de gas','carga r507','carga nh3','prueba de presión','prueba de presion','prueba elect')) return 'pem';
+    if(hay('montaje','instalación','instalacion','mano de obra','soldadura','soldador','tendido')) return 'instalacion';
+    if(hay('tubería','tuberia','cobre','hdpe','ppr','fe.ne','fierro negro','aislamiento de tub')) return 'tuberia';
+    if(hay('cable','tablero','bandeja','sensor','solenoide','arrancador','contactor','rz1','disyuntor','luminaria','iluminación','iluminacion','termometría','termometria')) return 'electrico';
+    if(hay('panel','puerta','poliestireno','plancha','lona','cortina','aislamiento de pared','aislamiento de techo','alquitrán','alquitran','cumbrera','prepintad')) return 'infraestructura';
+    if(hay('compresor','condensador','evaporador','smartcold','bitzer','rack','chiller','bomba','tanque','intercambiador','unidad cond','gas cooler','desrecalentador','ventilador de túnel','ventilador de tunel','válvula de control','valvula de control','válvula nh3','valvula nh3','válvula glicol','valvula glicol')) return 'equipo';
+
+    return 'otro';
+  }
+
+  // ── Parser del Excel ─────────────────────────────────────────────
+  function isSummarySheet(name){
+    const n = (name||'').toLowerCase();
+    return n.includes('resumen') || (n.includes('cuadro') && n.includes('precio'));
+  }
+  function isStaffSheet(name){
+    const n = (name||'').toLowerCase();
+    return n.includes('gastos generales') || n.includes('staff');
+  }
+  function findHeaderRow(rows){
+    for(let i=0; i<Math.min(rows.length, 40); i++){
+      const r = rows[i] || [];
+      const joined = r.map(c => String(c||'').toLowerCase()).join('|');
+      if(joined.includes('descripci') && (joined.includes('item') || joined.includes('ítem'))) return i;
+    }
+    return -1;
+  }
+  function locateColumns(headerRow){
+    const idx = {item:-1, desc:-1, unidad:-1, cant:-1, costo_u:-1, costo_t:-1, margen:-1, venta_u:-1, venta_t:-1};
+    for(let c=0; c<headerRow.length; c++){
+      const v = String(headerRow[c]||'').toLowerCase().trim();
+      if(!v) continue;
+      if(idx.item<0 && (v==='item'||v==='ítem')) idx.item = c;
+      if(idx.desc<0 && v.startsWith('descripci')) idx.desc = c;
+      if(idx.unidad<0 && (v==='unidad'||v==='und'||v==='und.'||v==='um')) idx.unidad = c;
+      if(idx.cant<0 && (v.startsWith('cant')||v==='cantidad')) idx.cant = c;
+      if(v.includes('precio') && v.includes('costo')){
+        if(idx.costo_u<0) idx.costo_u = c;
+        else if(idx.costo_t<0) idx.costo_t = c;
+      }
+      if(v==='margen' || v.startsWith('margen')) idx.margen = c;
+      if(v.includes('precio') && v.includes('venta')){
+        if(idx.venta_u<0) idx.venta_u = c;
+        else if(idx.venta_t<0) idx.venta_t = c;
+      }
+    }
+    return idx;
+  }
+  function refineColumns(rows, headerIdx, idx){
+    const next = rows[headerIdx+1] || [];
+    let seenCostoUnit=false;
+    for(let c=0;c<next.length;c++){
+      const v = String(next[c]||'').toLowerCase().trim();
+      if(v==='unitario' || v==='unit' || v==='unit.'){
+        if(idx.costo_u>=0 && c >= idx.costo_u && !seenCostoUnit){ idx.costo_u = c; seenCostoUnit=true; }
+        else if(idx.venta_u>=0 && c >= idx.venta_u){ idx.venta_u = c; }
+      }
+      if(v==='total'){
+        if(idx.costo_t<0 && idx.costo_u>=0 && c > idx.costo_u){ idx.costo_t = c; }
+        else if(idx.venta_t<0 && idx.venta_u>=0 && c > idx.venta_u){ idx.venta_t = c; }
+        else if(idx.costo_t>=0 && idx.costo_t<c && idx.venta_t<0){ idx.venta_t = c; }
+      }
+    }
+    return idx;
+  }
+  function _num(v){
+    if(v===null||v===undefined||v==='') return null;
+    if(typeof v === 'number') return isFinite(v)? v : null;
+    const s = String(v).replace(/[^\d.\-]/g,'');
+    const n = parseFloat(s);
+    return isNaN(n)? null : n;
+  }
+  function parseSheet(wb, sheetName){
+    const ws = wb.Sheets[sheetName];
+    if(!ws) return [];
+    const rows = window.XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true});
+    const headerIdx = findHeaderRow(rows);
+    if(headerIdx < 0) return [];
+    let idx = locateColumns(rows[headerIdx]);
+    idx = refineColumns(rows, headerIdx, idx);
+    if(idx.desc < 0) return [];
+
+    const out = [];
+    let currentParent = '';
+    for(let i = headerIdx + 2; i < rows.length; i++){
+      const r = rows[i] || [];
+      const desc = String(r[idx.desc]||'').trim();
+      if(!desc) continue;
+      const dlow = desc.toLowerCase();
+      if(dlow.startsWith('inversión total') || dlow.startsWith('inversion total') || dlow === 'total') break;
+
+      const cantidad = _num(r[idx.cant]);
+      const costo_unit = _num(r[idx.costo_u]);
+      const costo_total = _num(r[idx.costo_t]);
+      const venta_unit = _num(r[idx.venta_u]);
+      const venta_total = _num(r[idx.venta_t]);
+      const margen = _num(r[idx.margen]);
+
+      if(cantidad===null && costo_total===null && venta_total===null){
+        if(!desc.startsWith('-')) currentParent = desc;
+        continue;
+      }
+
+      let item = '';
+      if(idx.item >= 0){
+        const rawItem = r[idx.item];
+        if(rawItem !== '' && rawItem !== null && rawItem !== undefined){
+          item = String(rawItem).trim();
+        }
+      }
+
+      out.push({
+        item: item || ('auto-' + (out.length+1)),
+        descripcion: desc.replace(/^[-•\s]+/, '').trim(),
+        unidad: String(r[idx.unidad]||'').trim() || null,
+        cantidad: cantidad,
+        costo_unit: costo_unit,
+        costo_total: costo_total ?? (cantidad && costo_unit ? cantidad * costo_unit : null),
+        margen_pct: margen,
+        venta_unit: venta_unit,
+        venta_total: venta_total ?? (cantidad && venta_unit ? cantidad * venta_unit : null),
+        hoja_origen: sheetName,
+        subcategoria: currentParent || null,
+        categoria: classifyPartida(desc, sheetName, currentParent)
+      });
+    }
+    return out;
+  }
+  function parseWorkbook(wb){
+    const result = [];
+    const summarySheets = wb.SheetNames.filter(isSummarySheet);
+    const staffSheets = wb.SheetNames.filter(isStaffSheet);
+    summarySheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+    if(result.length === 0){
+      wb.SheetNames.forEach(sn => {
+        const skip = ['Memoria','Descripción Técnica','Descripcion Técnica','PAY BACK',
+                      'BANDEJAS Y TAPAS, CANALETAS','CUBICAJE OPC. 1','COTI-40 HP','COMPA. EVAPO'];
+        if(skip.includes(sn)) return;
+        result.push(...parseSheet(wb, sn));
+      });
+    } else {
+      const hasGGen = result.some(p => p.categoria === 'staff' || p.categoria === 'gastos_generales');
+      if(!hasGGen) staffSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+    }
+    return result;
+  }
+
+  // ── Formateadores ────────────────────────────────────────────────
+  function fmtMoney(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    return '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  }
+  function fmtPct(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    const p = Math.abs(v) <= 1 ? v * 100 : v;
+    return p.toFixed(1) + '%';
+  }
+  function fmtNum(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    return Number(v).toLocaleString('en-US',{maximumFractionDigits:2});
+  }
+
+  // ── UI: refresca el indicador de proyecto al entrar al tab ──────
+  function refreshProjectIndicator(){
+    const projInfo = document.getElementById('imp-pres-projinfo');
+    const noProj = document.getElementById('imp-pres-noproj');
+    const projName = document.getElementById('imp-pres-projname');
+    if(!projInfo || !noProj) return;
+    const hasProj = !!(window.currentProyecto && window.currentProyecto.nombre);
+    projInfo.classList.toggle('hidden', !hasProj);
+    noProj.classList.toggle('hidden', hasProj);
+    if(hasProj) projName.textContent = window.currentProyecto.nombre;
+  }
+
+  // ── UI: pasos del wizard ─────────────────────────────────────────
+  function impPresStep(n){
+    [1,2,3].forEach(i => {
+      const s = document.getElementById('imp-pres-step'+i);
+      if(s) s.classList.toggle('hidden', i !== n);
+    });
+  }
+  window.impPresReset = function(){
+    _impRows = [];
+    const fi = document.getElementById('imp-pres-file');
+    if(fi) fi.value = '';
+    impPresStep(1);
+    refreshProjectIndicator();
+  };
+
+  // ── Onclick / Drag & drop / File select ──────────────────────────
+  function handleFile(file){
+    if(!file) return;
+    if(!window.currentProyecto || !window.currentProyecto.nombre){
+      try{ window.showToast('Seleccioná un proyecto antes de importar','3500','warn'); }catch(e){}
+      refreshProjectIndicator();
+      return;
+    }
+    if(!window.XLSX){
+      try{ window.showToast('SheetJS no cargó. Recargá la página.','5000','danger'); }catch(e){}
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const wb = window.XLSX.read(e.target.result, {type:'array'});
+        const rows = parseWorkbook(wb);
+        if(!rows.length){
+          try{ window.showToast('No se encontraron partidas. Revisá la hoja Resumen de Cuadro de Precio.','5000','warn'); }catch(e){}
+          return;
+        }
+        _impRows = rows;
+        _impBatch = 'pres_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+        renderPreview();
+        impPresStep(2);
+      }catch(err){
+        console.error('[imp-pres] parse:', err);
+        try{ window.showToast('Error leyendo Excel: '+(err.message||err),'6000','danger'); }catch(e){}
+      }
+    };
+    reader.onerror = () => { try{ window.showToast('Error de lectura del archivo','4000','danger'); }catch(e){} };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ── Preview render ───────────────────────────────────────────────
+  function renderPreview(){
+    const tot_costo = _impRows.reduce((a,r) => a + (r.costo_total||0), 0);
+    const tot_venta = _impRows.reduce((a,r) => a + (r.venta_total||0), 0);
+    const margen = tot_venta > 0 ? (tot_venta - tot_costo) / tot_venta : 0;
+
+    document.getElementById('imp-pres-summary').innerHTML = `
+      <div class="kpi-card"><div class="kpi-lbl">Partidas</div><div class="kpi-val">${_impRows.length}</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Costo Comercial</div><div class="kpi-val">${fmtMoney(tot_costo)}</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Venta Comercial</div><div class="kpi-val">${fmtMoney(tot_venta)}</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Margen Comercial</div><div class="kpi-val">${fmtPct(margen)}</div></div>
+    `;
+
+    const tbody = document.querySelector('#imp-pres-table tbody');
+    tbody.innerHTML = _impRows.map((r,i) => `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 10px;font-size:11px;color:var(--text-3);vertical-align:top">${r.item||''}</td>
+        <td style="padding:7px 10px;vertical-align:top">
+          <div style="font-weight:500;color:var(--text)">${escapeHtml(r.descripcion)}</div>
+          ${r.subcategoria?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">↳ ${escapeHtml(r.subcategoria)}</div>`:''}
+          <div style="font-size:9px;color:var(--text-3);margin-top:3px">📄 ${escapeHtml(r.hoja_origen)}</div>
+        </td>
+        <td style="padding:7px 10px;font-size:11px;vertical-align:top">${r.unidad||'—'}</td>
+        <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${fmtNum(r.cantidad)}</td>
+        <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${fmtMoney(r.costo_unit)}</td>
+        <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;vertical-align:top">${fmtMoney(r.costo_total)}</td>
+        <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${fmtPct(r.margen_pct)}</td>
+        <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text);vertical-align:top">${fmtMoney(r.venta_total)}</td>
+        <td style="padding:7px 10px;vertical-align:top">
+          <select class="imp-cat-sel" data-row="${i}" onchange="impPresSetCat(${i}, this.value)"
+                  style="padding:4px 6px;font-size:11px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);color:${CAT_COLORS[r.categoria]||'var(--text)'};font-weight:600;cursor:pointer">
+            ${CATS.map(c => `<option value="${c}" ${c===r.categoria?'selected':''}>${CAT_LABELS[c]}</option>`).join('')}
+          </select>
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('imp-pres-foot').textContent =
+      `Proyecto: ${window.currentProyecto.nombre} · Batch: ${_impBatch.slice(-8)} · ${_impRows.length} partidas`;
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  window.impPresSetCat = function(i, v){
+    if(_impRows[i]){
+      _impRows[i].categoria = v;
+      const sel = document.querySelector(`select.imp-cat-sel[data-row="${i}"]`);
+      if(sel) sel.style.color = CAT_COLORS[v] || 'var(--text)';
+    }
+  };
+
+  // ── Commit a Supabase ────────────────────────────────────────────
+  window.impPresCommit = async function(){
+    if(!_impRows.length){ try{ window.showToast('No hay partidas','3000','warn'); }catch(e){} return; }
+    if(!window.currentProyecto || !window.currentProyecto.nombre){
+      try{ window.showToast('Falta proyecto','3000','warn'); }catch(e){}
+      return;
+    }
+
+    const btn = document.getElementById('imp-pres-commit-btn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></span> Importando…';
+
+    try{
+      const projName = window.currentProyecto.nombre;
+      const payload = _impRows.map(r => ({
+        nombre_proyecto: projName,
+        item: r.item || null,
+        descripcion: r.descripcion,
+        unidad: r.unidad,
+        cantidad: r.cantidad,
+        costo_unit: r.costo_unit,
+        costo_total: r.costo_total,
+        margen_pct: r.margen_pct != null && Math.abs(r.margen_pct) > 1 ? r.margen_pct/100 : r.margen_pct,
+        venta_unit: r.venta_unit,
+        venta_total: r.venta_total,
+        categoria: r.categoria,
+        subcategoria: r.subcategoria,
+        hoja_origen: r.hoja_origen,
+        import_batch: _impBatch
+      }));
+
+      // Insertar en chunks de 200 (REST limit-safe)
+      const CHUNK = 200;
+      let inserted = 0;
+      for(let i=0; i<payload.length; i+=CHUNK){
+        const slice = payload.slice(i, i+CHUNK);
+        await sbFetch('/rest/v1/presupuestos', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify(slice)
+        });
+        inserted += slice.length;
+      }
+
+      const tot_costo = _impRows.reduce((a,r) => a + (r.costo_total||0), 0);
+      const tot_venta = _impRows.reduce((a,r) => a + (r.venta_total||0), 0);
+      const margen = tot_venta > 0 ? (tot_venta - tot_costo) / tot_venta : 0;
+      const byCat = {};
+      _impRows.forEach(r => { byCat[r.categoria] = (byCat[r.categoria]||0) + (r.venta_total||0); });
+
+      document.getElementById('imp-pres-result').innerHTML = `
+        <div style="padding:14px 16px;border-radius:var(--r);background:var(--success-bg);border:1px solid var(--success-2);color:var(--success);margin-bottom:14px;font-size:13px">
+          <b>✓ Importación exitosa.</b> Se guardaron <b>${inserted}</b> partidas en Supabase para <b>${escapeHtml(projName)}</b>.
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">
+          <div class="kpi-card"><div class="kpi-lbl">Partidas</div><div class="kpi-val">${inserted}</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Costo Comercial</div><div class="kpi-val">${fmtMoney(tot_costo)}</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Venta Comercial</div><div class="kpi-val">${fmtMoney(tot_venta)}</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Margen Comercial</div><div class="kpi-val">${fmtPct(margen)}</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-2)">
+          <b>Distribución por categoría (venta comercial):</b>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+            ${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([k,v]) =>
+              `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:6px;background:${CAT_COLORS[k]}22;color:${CAT_COLORS[k]};font-size:11px;font-weight:600">
+                ${CAT_LABELS[k]||k}: ${fmtMoney(v)}
+              </span>`
+            ).join('')}
+          </div>
+        </div>
+      `;
+      impPresStep(3);
+      try{ window.showToast(`✓ ${inserted} partidas importadas`, 3500, 'success'); }catch(e){}
+
+    }catch(err){
+      console.error('[imp-pres] commit:', err);
+      document.getElementById('imp-pres-result').innerHTML = `
+        <div style="padding:14px 16px;border-radius:var(--r);background:var(--danger-bg);border:1px solid var(--danger-2);color:var(--danger);font-size:13px">
+          <b>Error al guardar:</b> ${escapeHtml(err.message||String(err))}
+          <div style="margin-top:8px;font-size:11px">Revisá la consola (F12) y verificá que la tabla <code>presupuestos</code> exista en Supabase.</div>
+        </div>
+      `;
+      impPresStep(3);
+      try{ window.showToast('Error al importar: '+(err.message||err),'8000','danger'); }catch(e){}
+    }finally{
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  };
+
+  // ── Wire up drag&drop + file input ───────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const drop = document.getElementById('imp-pres-drop');
+    const file = document.getElementById('imp-pres-file');
+    if(!drop || !file) return;
+
+    drop.addEventListener('click', () => file.click());
+    file.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if(f) handleFile(f);
+    });
+
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      drop.style.borderColor = 'var(--teal-500)';
+      drop.style.background = 'rgba(6,182,212,.06)';
+    }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      drop.style.borderColor = 'var(--border-strong)';
+      drop.style.background = 'var(--surface-2)';
+    }));
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f) handleFile(f);
+    });
+  });
+
+  // ── Hook into showTab + cargarProyecto para refrescar indicador ─
+  const _origShowTab_imp = window.showTab;
+  window.showTab = function(tab){
+    if(typeof _origShowTab_imp === 'function') _origShowTab_imp(tab);
+    if(tab === 'imports') refreshProjectIndicator();
+  };
+  const _origCargarProyecto = window.cargarProyecto;
+  window.cargarProyecto = function(...args){
+    const r = (typeof _origCargarProyecto === 'function') ? _origCargarProyecto.apply(this, args) : undefined;
+    setTimeout(refreshProjectIndicator, 100);
+    return r;
+  };
+
+  // Animation @keyframes spin (si no existe ya)
+  if(!document.getElementById('imp-pres-keyframes')){
+    const s = document.createElement('style');
+    s.id = 'imp-pres-keyframes';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}} .imp-cat-sel:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 2px rgba(6,182,212,.15)}';
+    document.head.appendChild(s);
+  }
+
+  console.log('%c✓ Importador Presupuesto cargado',
+    'background:#06b6d4;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
+})();
 </script>
 </body>
 </html>
