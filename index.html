@@ -3044,6 +3044,11 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
       <span>Riesgos</span>
       <span class="tab-badge hidden"></span>
     </button>
+    <button class="nav-tab" data-tab="costos" onclick="showTab('costos')">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span>Costos</span>
+      <span class="tab-badge hidden"></span>
+    </button>
     <button class="nav-tab" data-tab="imports" onclick="showTab('imports')">
       <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
       <span>Imports</span>
@@ -3579,6 +3584,102 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
             <button class="btn btn-primary" onclick="guardarRiesgo()">Guardar riesgo</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ COSTOS & MÁRGENES · Fase 3 #4 ══ -->
+    <div class="tab-content" id="tab-costos">
+
+      <!-- Estado vacío (sin proyecto / sin datos) -->
+      <div id="costos-noproj" class="hidden">
+        <div class="sec-card">
+          <div class="sec-body" style="text-align:center;padding:40px 20px;color:var(--text-2)">
+            <svg style="width:48px;height:48px;color:var(--text-3);margin-bottom:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Seleccioná un proyecto</div>
+            <div style="font-size:12px">Andá al selector arriba y elegí un proyecto para ver sus costos y márgenes.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="costos-empty" class="hidden">
+        <div class="sec-card">
+          <div class="sec-body" style="text-align:center;padding:40px 20px;color:var(--text-2)">
+            <svg style="width:48px;height:48px;color:var(--text-3);margin-bottom:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No hay presupuesto cargado para este proyecto</div>
+            <div style="font-size:12px;margin-bottom:14px">Subí el Excel de la propuesta económica desde el tab <b>Imports</b>.</div>
+            <button class="btn btn-primary btn-sm" onclick="showTab('imports')">→ Ir a Imports</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="costos-loading" class="hidden">
+        <div class="sec-card">
+          <div class="sec-body" style="text-align:center;padding:30px;color:var(--text-2)">
+            <div class="spinner" style="display:inline-block;width:24px;height:24px;border:3px solid var(--surface-2);border-top-color:var(--teal-500);border-radius:50%;animation:spin .8s linear infinite"></div>
+            <div style="margin-top:10px;font-size:12px">Cargando presupuesto…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista principal (KPIs + chart + tabla) -->
+      <div id="costos-view" class="hidden">
+
+        <!-- KPIs principales -->
+        <div class="kpi-grid" id="costos-kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
+
+        <!-- Distribución por categoría -->
+        <div class="sec-card" style="margin-bottom:14px">
+          <div class="sec-head">
+            <span class="sec-title">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--violet-500);margin-right:8px;vertical-align:middle"></span>
+              Distribución por categoría
+            </span>
+            <span style="font-size:11px;color:var(--text-2)" id="costos-cat-count"></span>
+          </div>
+          <div class="sec-body">
+            <div id="costos-cat-list"></div>
+          </div>
+        </div>
+
+        <!-- Detalle de partidas -->
+        <div class="sec-card">
+          <div class="sec-head">
+            <span class="sec-title">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand-500);margin-right:8px;vertical-align:middle"></span>
+              Detalle de partidas
+            </span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="costos-filter" placeholder="Filtrar descripción…" oninput="renderCostos()"
+                     style="padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit;min-width:180px">
+              <select id="costos-cat-filter" onchange="renderCostos()"
+                      style="padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit">
+                <option value="">Todas las categorías</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="loadCostos(true)" title="Refrescar desde Supabase">⟳</button>
+            </div>
+          </div>
+          <div class="sec-body" style="padding:0">
+            <div style="overflow:auto;max-height:60vh">
+              <table id="costos-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead style="background:var(--surface-2);position:sticky;top:0;z-index:5">
+                  <tr style="text-align:left">
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Ítem</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Descripción</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Categoría</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Cant.</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Costo</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Margen</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Venta</th>
+                  </tr>
+                </thead>
+                <tbody id="costos-tbody"></tbody>
+              </table>
+            </div>
+            <div id="costos-foot" style="padding:8px 14px;font-size:11px;color:var(--text-3);border-top:1px solid var(--border);background:var(--surface-2)"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -9673,6 +9774,263 @@ let _dashSources = null;
 
   console.log('%c✓ Importador Presupuesto cargado',
     'background:#06b6d4;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════
+// TAB COSTOS & MÁRGENES · FASE 3 #4
+// Lee tabla `presupuestos` para el proyecto activo y muestra
+// KPIs, distribución por categoría y tabla detallada.
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+
+  const COSTOS_CAT_LABELS = {
+    equipo:'Equipo', infraestructura:'Infraestructura', instalacion:'Instalación',
+    tuberia:'Tubería', electrico:'Eléctrico', pem:'PEM',
+    gastos_generales:'Gastos Generales', staff:'Staff', otro:'Otro'
+  };
+  const COSTOS_CAT_COLORS = {
+    equipo:'#2563eb', infraestructura:'#db2777', instalacion:'#d97706',
+    tuberia:'#4f46e5', electrico:'#dc2626', pem:'#059669',
+    gastos_generales:'#9333ea', staff:'#0891b2', otro:'#64748b'
+  };
+
+  let _costosRows = [];
+  let _costosLoadedFor = null;       // nombre_proyecto cacheado
+
+  function _showCostos(which){
+    ['noproj','empty','loading','view'].forEach(k => {
+      const el = document.getElementById('costos-'+k);
+      if(el) el.classList.toggle('hidden', k !== which);
+    });
+  }
+
+  function _fmtMoney(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    return '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  }
+  function _fmtMoneyCompact(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    const n = Number(v);
+    if(Math.abs(n) >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+    if(Math.abs(n) >= 1e3) return '$' + (n/1e3).toFixed(1) + 'k';
+    return '$' + n.toFixed(0);
+  }
+  function _fmtPct(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    const p = Math.abs(v) <= 1 ? v * 100 : v;
+    return p.toFixed(1) + '%';
+  }
+  function _fmtNum(v){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    return Number(v).toLocaleString('en-US',{maximumFractionDigits:2});
+  }
+  function _escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ── Cargar datos desde Supabase ──
+  window.loadCostos = async function(force){
+    if(!currentProyecto || !currentProyecto.nombre){
+      _showCostos('noproj');
+      return;
+    }
+    const projName = currentProyecto.nombre;
+
+    // Cache: si ya cargamos para este proyecto y no es force, no re-fetch
+    if(!force && _costosLoadedFor === projName){
+      _showCostos(_costosRows.length ? 'view' : 'empty');
+      if(_costosRows.length) renderCostos();
+      return;
+    }
+
+    _showCostos('loading');
+    try{
+      const enc = encodeURIComponent(projName);
+      const rows = await sbFetch(`/rest/v1/presupuestos?nombre_proyecto=eq.${enc}&order=item.asc&limit=2000`);
+      _costosRows = Array.isArray(rows) ? rows : [];
+      _costosLoadedFor = projName;
+      if(!_costosRows.length){
+        _showCostos('empty');
+        return;
+      }
+      // Poblar filtro de categorías
+      const cats = Array.from(new Set(_costosRows.map(r => r.categoria).filter(Boolean))).sort();
+      const sel = document.getElementById('costos-cat-filter');
+      if(sel){
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Todas las categorías</option>' +
+          cats.map(c => `<option value="${c}" ${c===cur?'selected':''}>${COSTOS_CAT_LABELS[c]||c}</option>`).join('');
+      }
+      _showCostos('view');
+      renderCostos();
+    }catch(err){
+      console.error('[costos] load:', err);
+      _showCostos('view');
+      document.getElementById('costos-kpis').innerHTML = `
+        <div class="kpi-card" style="grid-column:1/-1;background:var(--danger-bg);border-color:var(--danger-2);color:var(--danger)">
+          <div class="kpi-lbl">Error</div>
+          <div style="font-size:12px;margin-top:4px">${_escapeHtml(err.message||String(err))}</div>
+        </div>`;
+    }
+  };
+
+  // ── Render: KPIs + categorías + tabla ──
+  window.renderCostos = function(){
+    const rows = _costosRows;
+    if(!rows.length) return;
+
+    // KPIs sobre TODAS las partidas (no afectado por filtros)
+    const tot_costo = rows.reduce((a,r) => a + (Number(r.costo_total)||0), 0);
+    const tot_venta = rows.reduce((a,r) => a + (Number(r.venta_total)||0), 0);
+    const margen_abs = tot_venta - tot_costo;
+    const margen_pct = tot_venta > 0 ? margen_abs / tot_venta : 0;
+
+    // Cuántos items hay por categoría
+    const byCat = {};
+    rows.forEach(r => {
+      const c = r.categoria || 'otro';
+      if(!byCat[c]) byCat[c] = { costo:0, venta:0, count:0 };
+      byCat[c].costo += Number(r.costo_total)||0;
+      byCat[c].venta += Number(r.venta_total)||0;
+      byCat[c].count++;
+    });
+
+    document.getElementById('costos-kpis').innerHTML = `
+      <div class="kpi-card">
+        <div class="kpi-lbl">Partidas</div>
+        <div class="kpi-val">${rows.length}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">${Object.keys(byCat).length} categorías</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Venta Comercial</div>
+        <div class="kpi-val" style="color:var(--brand-700)">${_fmtMoneyCompact(tot_venta)}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">${_fmtMoney(tot_venta)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Costo Comercial</div>
+        <div class="kpi-val" style="color:var(--text)">${_fmtMoneyCompact(tot_costo)}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">${_fmtMoney(tot_costo)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Margen Comercial</div>
+        <div class="kpi-val" style="color:${margen_pct >= 0.15 ? 'var(--success)' : margen_pct >= 0.08 ? 'var(--warning)' : 'var(--danger)'}">${_fmtPct(margen_pct)}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">${_fmtMoneyCompact(margen_abs)} absoluto</div>
+      </div>
+      <div class="kpi-card" style="opacity:.55">
+        <div class="kpi-lbl">Venta Real</div>
+        <div class="kpi-val" style="color:var(--text-3)">—</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Pendiente (carga mensual)</div>
+      </div>
+      <div class="kpi-card" style="opacity:.55">
+        <div class="kpi-lbl">Costo Real</div>
+        <div class="kpi-val" style="color:var(--text-3)">—</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Pendiente (carga mensual)</div>
+      </div>
+    `;
+
+    // Distribución por categoría — barra horizontal stacked + lista
+    document.getElementById('costos-cat-count').textContent = `${Object.keys(byCat).length} categorías · base venta comercial`;
+    const sortedCats = Object.entries(byCat).sort((a,b) => b[1].venta - a[1].venta);
+    const ventaTotal = tot_venta || 1;
+    const stackedBar = sortedCats.map(([k, v]) => {
+      const pct = (v.venta / ventaTotal) * 100;
+      return `<div style="flex:${pct};background:${COSTOS_CAT_COLORS[k]||'#94a3b8'};height:100%" title="${COSTOS_CAT_LABELS[k]||k}: ${_fmtPct(pct/100)}"></div>`;
+    }).join('');
+    const catList = sortedCats.map(([k, v]) => {
+      const pct = (v.venta / ventaTotal) * 100;
+      const margenCat = v.venta - v.costo;
+      const margenPct = v.venta > 0 ? margenCat / v.venta : 0;
+      return `
+        <div style="display:grid;grid-template-columns:14px 1fr 90px 90px 90px 70px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);font-size:12px">
+          <div style="width:10px;height:10px;border-radius:3px;background:${COSTOS_CAT_COLORS[k]||'#94a3b8'}"></div>
+          <div>
+            <div style="font-weight:600;color:var(--text)">${COSTOS_CAT_LABELS[k]||k}</div>
+            <div style="font-size:10px;color:var(--text-3)">${v.count} partidas · ${pct.toFixed(1)}% del total</div>
+          </div>
+          <div style="text-align:right;font-variant-numeric:tabular-nums">
+            <div style="font-size:10px;color:var(--text-3)">Costo</div>
+            <div>${_fmtMoneyCompact(v.costo)}</div>
+          </div>
+          <div style="text-align:right;font-variant-numeric:tabular-nums">
+            <div style="font-size:10px;color:var(--text-3)">Venta</div>
+            <div style="color:var(--brand-700);font-weight:600">${_fmtMoneyCompact(v.venta)}</div>
+          </div>
+          <div style="text-align:right;font-variant-numeric:tabular-nums">
+            <div style="font-size:10px;color:var(--text-3)">Margen $</div>
+            <div>${_fmtMoneyCompact(margenCat)}</div>
+          </div>
+          <div style="text-align:right;font-variant-numeric:tabular-nums">
+            <div style="font-size:10px;color:var(--text-3)">Margen %</div>
+            <div style="font-weight:700;color:${margenPct >= 0.15 ? 'var(--success)' : margenPct >= 0.08 ? 'var(--warning)' : 'var(--danger)'}">${_fmtPct(margenPct)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('costos-cat-list').innerHTML = `
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:14px;background:var(--surface-2)">${stackedBar}</div>
+      ${catList}
+    `;
+
+    // Tabla detalle (con filtros aplicados)
+    const txt = (document.getElementById('costos-filter')?.value || '').toLowerCase().trim();
+    const catF = document.getElementById('costos-cat-filter')?.value || '';
+    const filtered = rows.filter(r => {
+      if(catF && r.categoria !== catF) return false;
+      if(txt){
+        const hay = (r.descripcion||'').toLowerCase() + ' ' + (r.subcategoria||'').toLowerCase() + ' ' + (r.item||'');
+        if(!hay.includes(txt)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('costos-tbody');
+    if(filtered.length === 0){
+      tbody.innerHTML = `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Sin resultados para los filtros aplicados</td></tr>`;
+    } else {
+      tbody.innerHTML = filtered.map(r => {
+        const cat = r.categoria || 'otro';
+        const margenAbs = (Number(r.venta_total)||0) - (Number(r.costo_total)||0);
+        return `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 10px;font-size:11px;color:var(--text-3);vertical-align:top">${r.item||''}</td>
+            <td style="padding:7px 10px;vertical-align:top">
+              <div style="font-weight:500;color:var(--text)">${_escapeHtml(r.descripcion)}</div>
+              ${r.subcategoria?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">↳ ${_escapeHtml(r.subcategoria)}</div>`:''}
+            </td>
+            <td style="padding:7px 10px;vertical-align:top">
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:5px;background:${COSTOS_CAT_COLORS[cat]}22;color:${COSTOS_CAT_COLORS[cat]};font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em">${COSTOS_CAT_LABELS[cat]||cat}</span>
+            </td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${_fmtNum(r.cantidad)}<div style="font-size:9px;color:var(--text-3)">${r.unidad||''}</div></td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${_fmtMoney(r.costo_total)}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;color:${(Number(r.margen_pct)||0) >= 0.15 ? 'var(--success)' : 'var(--text-2)'}">${_fmtPct(r.margen_pct)}<div style="font-size:9px;color:var(--text-3)">${_fmtMoneyCompact(margenAbs)}</div></td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text);vertical-align:top">${_fmtMoney(r.venta_total)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('costos-foot').textContent =
+      `Mostrando ${filtered.length} de ${rows.length} partidas · Proyecto: ${currentProyecto.nombre}`;
+  };
+
+  // ── Hook into showTab + cargarProyecto ──
+  const _origShowTab_costos = window.showTab;
+  window.showTab = function(tab){
+    if(typeof _origShowTab_costos === 'function') _origShowTab_costos(tab);
+    if(tab === 'costos') loadCostos(false);
+  };
+  const _origCargarProyecto_costos = window.cargarProyecto;
+  window.cargarProyecto = function(...args){
+    const r = (typeof _origCargarProyecto_costos === 'function') ? _origCargarProyecto_costos.apply(this, args) : undefined;
+    // Invalidar caché para que recarga al cambiar proyecto
+    _costosLoadedFor = null;
+    return r;
+  };
+
+  console.log('%c✓ Tab Costos & Márgenes cargado',
+    'background:#7c3aed;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
 })();
 </script>
 </body>
