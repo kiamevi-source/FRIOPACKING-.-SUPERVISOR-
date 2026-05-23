@@ -9384,6 +9384,7 @@ let _dashSources = null;
   }
   function locateColumns(headerRow){
     const idx = {item:-1, desc:-1, unidad:-1, cant:-1, costo_u:-1, costo_t:-1, margen:-1, venta_u:-1, venta_t:-1};
+    // PASADA 1: matches estrictos (formato "Precio Costo" / "Precio Venta" con sub-cols)
     for(let c=0; c<headerRow.length; c++){
       const v = String(headerRow[c]||'').toLowerCase().trim();
       if(!v) continue;
@@ -9395,10 +9396,26 @@ let _dashSources = null;
         if(idx.costo_u<0) idx.costo_u = c;
         else if(idx.costo_t<0) idx.costo_t = c;
       }
-      if(v==='margen' || v.startsWith('margen')) idx.margen = c;
+      // Margen / Utilidad / F.S (factor de seguridad)
+      if(idx.margen<0 && (v==='margen' || v.startsWith('margen') || v==='utilidad' || v==='utilidad %' || v==='f.s' || v==='fs')){
+        idx.margen = c;
+      }
       if(v.includes('precio') && v.includes('venta')){
         if(idx.venta_u<0) idx.venta_u = c;
         else if(idx.venta_t<0) idx.venta_t = c;
+      }
+    }
+    // PASADA 2: formato simplificado (hoja RESUMEN tipo BOMAREA)
+    // "Costo" solo (sin "precio") → costo_total directo
+    // "Inversión" / "Venta" solo → venta_total directo
+    for(let c=0; c<headerRow.length; c++){
+      const v = String(headerRow[c]||'').toLowerCase().trim();
+      if(!v) continue;
+      if(idx.costo_u<0 && idx.costo_t<0 && (v==='costo' || v==='costo total' || v.startsWith('costo us') || v.startsWith('costo $'))){
+        idx.costo_t = c;
+      }
+      if(idx.venta_u<0 && idx.venta_t<0 && (v==='inversión' || v==='inversion' || v==='venta' || v==='venta total' || v.startsWith('inversión us') || v.startsWith('inversion us') || v.startsWith('inversión $') || v.startsWith('venta us'))){
+        idx.venta_t = c;
       }
     }
     return idx;
@@ -9484,18 +9501,35 @@ let _dashSources = null;
     return out;
   }
   function parseWorkbook(wb){
-    const result = [];
     const summarySheets = wb.SheetNames.filter(isSummarySheet);
     const staffSheets = wb.SheetNames.filter(isStaffSheet);
+
+    // Hojas a ignorar (metadata, no partidas)
+    const META_SHEETS = new Set([
+      'Memoria','MEMORIA','Descripción Técnica','Descripcion Técnica','DESCRIPCIÓN TÉCNICA',
+      'PAY BACK','BANDEJAS Y TAPAS, CANALETAS','CUBICAJE OPC. 1','COTI-40 HP','COMPA. EVAPO'
+    ]);
+
+    // Helper: cuenta filas con al menos UN valor monetario válido (costo_total OR venta_total)
+    const moneyRowCount = rows => rows.filter(r => (r.costo_total||0) > 0 || (r.venta_total||0) > 0).length;
+
+    // Estrategia: intentar SUMMARY primero. Si tiene datos monetarios válidos → usar.
+    // Si NO (todos los costo/venta vienen null), caer a las hojas de detalle.
+    let result = [];
     summarySheets.forEach(sn => result.push(...parseSheet(wb, sn)));
-    if(result.length === 0){
+
+    const summaryHasMoney = moneyRowCount(result) >= 3;  // tolerancia: al menos 3 filas con $
+    if(!summaryHasMoney){
+      // Fallback: parsear TODAS las hojas de detalle (NO summary, para evitar duplicación)
+      console.log('[imp-pres] summary sin datos monetarios → fallback a hojas de detalle');
+      result = [];
       wb.SheetNames.forEach(sn => {
-        const skip = ['Memoria','Descripción Técnica','Descripcion Técnica','PAY BACK',
-                      'BANDEJAS Y TAPAS, CANALETAS','CUBICAJE OPC. 1','COTI-40 HP','COMPA. EVAPO'];
-        if(skip.includes(sn)) return;
+        if(META_SHEETS.has(sn)) return;
+        if(isSummarySheet(sn)) return;  // ya intentamos, no hubo $
         result.push(...parseSheet(wb, sn));
       });
     } else {
+      // Summary sí tuvo $. Sumar staff si no estaba incluido.
       const hasGGen = result.some(p => p.categoria === 'staff' || p.categoria === 'gastos_generales');
       if(!hasGGen) staffSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
     }
