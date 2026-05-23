@@ -9463,6 +9463,10 @@ let _dashSources = null;
       const dlow = desc.toLowerCase();
       if(dlow.startsWith('inversión total') || dlow.startsWith('inversion total') || dlow === 'total') break;
 
+      // Skip subtotales explícitos
+      const dl = desc.toLowerCase();
+      if(dl.startsWith('sub total') || dl.startsWith('subtotal')) continue;
+
       const cantidad = _num(r[idx.cant]);
       const costo_unit = _num(r[idx.costo_u]);
       const costo_total = _num(r[idx.costo_t]);
@@ -9470,7 +9474,11 @@ let _dashSources = null;
       const venta_total = _num(r[idx.venta_t]);
       const margen = _num(r[idx.margen]);
 
-      if(cantidad===null && costo_total===null && venta_total===null){
+      // REGLA: solo partidas con costo_total O venta_total EXPLÍCITO en la fuente.
+      // Las filas con solo cant+precio_unit (sin total) son SUB-DETALLES de la
+      // partida padre — los cotizadores los listan como "qué incluye" pero los
+      // precios ya están sumados en el total del padre.
+      if(costo_total===null && venta_total===null){
         if(!desc.startsWith('-')) currentParent = desc;
         continue;
       }
@@ -9489,10 +9497,10 @@ let _dashSources = null;
         unidad: String(r[idx.unidad]||'').trim() || null,
         cantidad: cantidad,
         costo_unit: costo_unit,
-        costo_total: costo_total ?? (cantidad && costo_unit ? cantidad * costo_unit : null),
+        costo_total: costo_total,
         margen_pct: margen,
         venta_unit: venta_unit,
-        venta_total: venta_total ?? (cantidad && venta_unit ? cantidad * venta_unit : null),
+        venta_total: venta_total,
         hoja_origen: sheetName,
         subcategoria: currentParent || null,
         categoria: classifyPartida(desc, sheetName, currentParent)
@@ -9502,7 +9510,6 @@ let _dashSources = null;
   }
   function parseWorkbook(wb){
     const summarySheets = wb.SheetNames.filter(isSummarySheet);
-    const staffSheets = wb.SheetNames.filter(isStaffSheet);
 
     // Hojas a ignorar (metadata, no partidas)
     const META_SHEETS = new Set([
@@ -9510,29 +9517,26 @@ let _dashSources = null;
       'PAY BACK','BANDEJAS Y TAPAS, CANALETAS','CUBICAJE OPC. 1','COTI-40 HP','COMPA. EVAPO'
     ]);
 
-    // Helper: cuenta filas con al menos UN valor monetario válido (costo_total OR venta_total)
-    const moneyRowCount = rows => rows.filter(r => (r.costo_total||0) > 0 || (r.venta_total||0) > 0).length;
+    const detailSheets = wb.SheetNames.filter(sn => !META_SHEETS.has(sn) && !isSummarySheet(sn));
 
-    // Estrategia: intentar SUMMARY primero. Si tiene datos monetarios válidos → usar.
-    // Si NO (todos los costo/venta vienen null), caer a las hojas de detalle.
+    // REGLA (pedida por usuario):
+    //   - Si hay SUMMARY + DETALLE → ignorar SUMMARY, usar DETALLE
+    //     (la summary es el consolidado de las otras hojas, contarla = doble)
+    //   - Si SOLO hay SUMMARY (sin detalle) → usar SUMMARY
+    //   - Si SOLO hay DETALLE → usar DETALLE
     let result = [];
-    summarySheets.forEach(sn => result.push(...parseSheet(wb, sn)));
-
-    const summaryHasMoney = moneyRowCount(result) >= 3;  // tolerancia: al menos 3 filas con $
-    if(!summaryHasMoney){
-      // Fallback: parsear TODAS las hojas de detalle (NO summary, para evitar duplicación)
-      console.log('[imp-pres] summary sin datos monetarios → fallback a hojas de detalle');
-      result = [];
-      wb.SheetNames.forEach(sn => {
-        if(META_SHEETS.has(sn)) return;
-        if(isSummarySheet(sn)) return;  // ya intentamos, no hubo $
-        result.push(...parseSheet(wb, sn));
-      });
+    let strategy = '';
+    if(summarySheets.length && detailSheets.length){
+      strategy = 'detail-only (skip resumen — es consolidado)';
+      detailSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+    } else if(summarySheets.length){
+      strategy = 'summary-only (no hay detalle)';
+      summarySheets.forEach(sn => result.push(...parseSheet(wb, sn)));
     } else {
-      // Summary sí tuvo $. Sumar staff si no estaba incluido.
-      const hasGGen = result.some(p => p.categoria === 'staff' || p.categoria === 'gastos_generales');
-      if(!hasGGen) staffSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+      strategy = 'detail-only (no hay summary)';
+      detailSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
     }
+    console.log('[imp-pres] estrategia:', strategy, '·', result.length, 'partidas');
     return result;
   }
 
