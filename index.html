@@ -9484,6 +9484,14 @@ let _dashSources = null;
     const n = parseFloat(s);
     return isNaN(n)? null : n;
   }
+  // ── Detectar tipo de componente (sub-detalle) ──
+  function detectarTipoComponente(desc){
+    const d = (desc||'').toLowerCase().replace(/\.$/,'').trim();
+    if(d === 'materiales' || d.startsWith('material')) return 'materiales';
+    if(d === 'mano de obra' || d.startsWith('mano de obra')) return 'mano_de_obra';
+    return 'componente';  // equipo físico u otro sub-item
+  }
+
   function parseSheet(wb, sheetName){
     const ws = wb.Sheets[sheetName];
     if(!ws) return [];
@@ -9495,17 +9503,24 @@ let _dashSources = null;
     if(idx.desc < 0) return [];
 
     const out = [];
-    let currentParent = '';
+    let currentPartida = null;  // partida nivel 1 en construcción
+
     for(let i = headerIdx + 2; i < rows.length; i++){
       const r = rows[i] || [];
       const desc = String(r[idx.desc]||'').trim();
       if(!desc) continue;
       const dlow = desc.toLowerCase();
       if(dlow.startsWith('inversión total') || dlow.startsWith('inversion total') || dlow === 'total') break;
+      if(dlow.startsWith('sub total') || dlow.startsWith('subtotal')) continue;
 
-      // Skip subtotales explícitos
-      const dl = desc.toLowerCase();
-      if(dl.startsWith('sub total') || dl.startsWith('subtotal')) continue;
+      // Leer ITEM crudo (string trimeado, vacío si no hay)
+      let itemRaw = '';
+      if(idx.item >= 0){
+        const v = r[idx.item];
+        if(v !== '' && v !== null && v !== undefined){
+          itemRaw = String(v).trim();
+        }
+      }
 
       const cantidad = _num(r[idx.cant]);
       const costo_unit = _num(r[idx.costo_u]);
@@ -9514,39 +9529,60 @@ let _dashSources = null;
       const venta_total = _num(r[idx.venta_t]);
       const margen = _num(r[idx.margen]);
 
-      // REGLA: solo partidas con costo_total O venta_total EXPLÍCITO en la fuente.
-      // Las filas con solo cant+precio_unit (sin total) son SUB-DETALLES de la
-      // partida padre — los cotizadores los listan como "qué incluye" pero los
-      // precios ya están sumados en el total del padre.
-      if(costo_total===null && venta_total===null){
-        if(!desc.startsWith('-')) currentParent = desc;
-        continue;
-      }
-
-      let item = '';
-      if(idx.item >= 0){
-        const rawItem = r[idx.item];
-        if(rawItem !== '' && rawItem !== null && rawItem !== undefined){
-          item = String(rawItem).trim();
+      if(itemRaw){
+        // ─── ES UNA PARTIDA NIVEL 1 (tiene ITEM numerado) ───
+        // Cerrar la partida anterior antes de abrir la nueva
+        if(currentPartida) out.push(currentPartida);
+        currentPartida = {
+          item: itemRaw,
+          descripcion: desc,
+          unidad: String(r[idx.unidad]||'').trim() || null,
+          cantidad,
+          costo_unit,
+          costo_total,
+          margen_pct: margen,
+          venta_unit,
+          venta_total,
+          hoja_origen: sheetName,
+          subcategoria: null,
+          componentes: [],
+          categoria: classifyPartida(desc, sheetName, null)
+        };
+      } else if(desc.startsWith('-') || desc.startsWith('•')){
+        // ─── ES UN SUB-DETALLE de la partida actual ───
+        if(currentPartida){
+          const cleanDesc = desc.replace(/^[-•\s]+/, '').trim();
+          currentPartida.componentes.push({
+            tipo: detectarTipoComponente(cleanDesc),
+            descripcion: cleanDesc,
+            unidad: String(r[idx.unidad]||'').trim() || null,
+            cantidad,
+            costo_unit,
+            costo_total,
+            margen_pct: margen,
+            venta_unit,
+            venta_total
+          });
         }
+        // si no hay partida actual, lo ignoramos (es un sub-detalle huérfano)
       }
-
-      out.push({
-        item: item || ('auto-' + (out.length+1)),
-        descripcion: desc.replace(/^[-•\s]+/, '').trim(),
-        unidad: String(r[idx.unidad]||'').trim() || null,
-        cantidad: cantidad,
-        costo_unit: costo_unit,
-        costo_total: costo_total,
-        margen_pct: margen,
-        venta_unit: venta_unit,
-        venta_total: venta_total,
-        hoja_origen: sheetName,
-        subcategoria: currentParent || null,
-        categoria: classifyPartida(desc, sheetName, currentParent)
-      });
+      // else: descripción sin ITEM y sin "-" → probablemente título de sección o nota → skip
     }
-    return out;
+
+    // Cerrar última partida
+    if(currentPartida) out.push(currentPartida);
+
+    // Filtrar: solo guardar partidas que tienen $ propio O sus componentes tienen $
+    return out.filter(p => {
+      const ownMoney = (p.costo_total||0) > 0 || (p.venta_total||0) > 0;
+      const compMoney = p.componentes.some(c => (c.costo_total||0) > 0 || (c.venta_total||0) > 0);
+      // Si no tiene $ propio pero sí en componentes, sumar al total de la partida (consolidación)
+      if(!ownMoney && compMoney){
+        p.costo_total = p.componentes.reduce((a,c) => a + (c.costo_total||0), 0) || null;
+        p.venta_total = p.componentes.reduce((a,c) => a + (c.venta_total||0), 0) || null;
+      }
+      return ownMoney || compMoney;
+    });
   }
   function parseWorkbook(wb){
     const summarySheets = wb.SheetNames.filter(isSummarySheet);
@@ -9742,6 +9778,7 @@ let _dashSources = null;
         categoria: r.categoria,
         subcategoria: r.subcategoria,
         hoja_origen: r.hoja_origen,
+        componentes: r.componentes || [],   // ← sub-detalles (Materiales, Mano de obra, equipos)
         import_batch: _impBatch
       }));
 
@@ -9787,6 +9824,25 @@ let _dashSources = null;
       `;
       impPresStep(3);
       try{ window.showToast(`✓ ${inserted} partidas importadas`, 3500, 'success'); }catch(e){}
+
+      // ─── AUTO-VINCULAR licitaciones del Gantt con partidas del presupuesto ───
+      // (la fn SQL hace match por keyword: NH3, Glicol, paneles, lonas, etc.)
+      try{
+        const cod = currentProyecto.cod || currentProyecto.nombre;
+        if(cod){
+          const linked = await sbFetch('/rest/v1/rpc/auto_link_licitaciones_to_partidas', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ p_cod_proyecto: cod })
+          });
+          if(Array.isArray(linked) && linked.length > 0){
+            console.log('[imp-pres] auto-link:', linked);
+            try{ window.showToast(`🔗 ${linked.length} licitaciones vinculadas a partidas`, 3000, 'success'); }catch(e){}
+          }
+        }
+      }catch(linkErr){
+        console.warn('[imp-pres] auto-link warning:', linkErr);
+      }
 
     }catch(err){
       console.error('[imp-pres] commit:', err);
@@ -10266,13 +10322,36 @@ let _dashSources = null;
     const cod = currentProyecto.cod || currentProyecto.nombre;
     el.innerHTML = `<div class="loading" style="padding:20px"><span class="spinner"></span>Cargando…</div>`;
     try{
+      // 1) Licitaciones del Gantt
       const rows = await sbFetch(`/rest/v1/tareas_gantt?cod_proyecto=eq.${encodeURIComponent(cod)}&categoria=eq.LICITACION&order=fecha_inicio_base.asc&limit=200`);
-      _licRows = (rows||[]).map(r => ({
-        ...r,
-        _especialidad: _extractEspecialidad(r.nombre_tarea),
-        _diasParaInicio: _daysUntil(r.fecha_inicio_base),
-        _diasParaFin: _daysUntil(r.fecha_fin_base)
-      }));
+
+      // 2) Partidas vinculadas (por item) — leemos las presupuestos cuyos items aparezcan en las licitaciones
+      const itemsLinked = Array.from(new Set((rows||[]).map(r => r.partida_item).filter(Boolean)));
+      let partidasMap = {};
+      if(itemsLinked.length > 0){
+        const itemsCSV = itemsLinked.map(i => `"${i}"`).join(',');
+        try{
+          const pres = await sbFetch(`/rest/v1/presupuestos?nombre_proyecto=eq.${encodeURIComponent(currentProyecto.nombre)}&item=in.(${encodeURIComponent(itemsCSV)})&select=item,descripcion,costo_total,venta_total,componentes`);
+          (pres||[]).forEach(p => { partidasMap[p.item] = p; });
+        }catch(e){ console.warn('[lic] error cargando partidas:', e); }
+      }
+
+      _licRows = (rows||[]).map(r => {
+        const partida = r.partida_item ? partidasMap[r.partida_item] : null;
+        // Buscar el componente "mano_de_obra" de la partida vinculada
+        let mo = null;
+        if(partida && Array.isArray(partida.componentes)){
+          mo = partida.componentes.find(c => c.tipo === 'mano_de_obra');
+        }
+        return {
+          ...r,
+          _especialidad: _extractEspecialidad(r.nombre_tarea),
+          _diasParaInicio: _daysUntil(r.fecha_inicio_base),
+          _diasParaFin: _daysUntil(r.fecha_fin_base),
+          _partida: partida,
+          _presupMO: mo  // { tipo, descripcion, costo_total, venta_total, ... }
+        };
+      });
       renderLicitaciones();
     }catch(err){
       console.error('[lic]', err);
@@ -10304,15 +10383,33 @@ let _dashSources = null;
         <span style="width:6px;height:6px;border-radius:50%;background:${ESTADO_COLORS[e]}"></span>${byEstado[e]} ${ESTADO_LABELS[e]}
       </span>`).join('');
 
+    function _fmtMoneyCompact(v){
+      if(v === null || v === undefined || isNaN(v)) return '—';
+      const n = Number(v);
+      if(Math.abs(n) >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+      if(Math.abs(n) >= 1e3) return '$' + (n/1e3).toFixed(1) + 'k';
+      return '$' + n.toFixed(0);
+    }
+
     const rows = _licRows.map((r,i) => {
       const isAdj = r.estado_licitacion === 'adjudicado' || r.estado_licitacion === 'contratado';
       const urgenteFin = r._diasParaFin !== null && r._diasParaFin < 7 && r.estado_licitacion !== 'contratado' && r.estado_licitacion !== 'adjudicado';
+      // Presupuestado de Mano de Obra (de la partida vinculada)
+      const presupMOCosto = r._presupMO ? (r._presupMO.costo_total || 0) : null;
+      const presupMOVenta = r._presupMO ? (r._presupMO.venta_total || 0) : null;
+      const montoAdj = r.monto_adjudicado ? Number(r.monto_adjudicado) : null;
+      // Δ vs presupuesto (comparamos contra venta MO si existe, sino costo)
+      const base = presupMOVenta || presupMOCosto;
+      const deltaPct = (montoAdj && base) ? ((montoAdj - base) / base * 100) : null;
+      const deltaColor = deltaPct === null ? 'var(--text-3)' : deltaPct > 5 ? 'var(--danger)' : deltaPct < -5 ? 'var(--success)' : 'var(--text-2)';
+
       return `
         <tr style="border-bottom:1px solid var(--border)">
           <td style="padding:10px;vertical-align:top">
             <div style="font-weight:600;color:var(--text);font-size:12px">${_escapeHtml(r.nombre_tarea)}</div>
             <div style="font-size:10px;color:var(--text-3);margin-top:2px">
               <span style="display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(46,125,209,.10);color:var(--brand-700);font-weight:600">${r._especialidad}</span>
+              ${r.partida_item ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(124,58,237,.10);color:var(--violet-600);font-weight:600;margin-left:4px" title="Vinculada a partida ${r.partida_item}">↗ ${r.partida_item}</span>` : ''}
             </div>
           </td>
           <td style="padding:10px;vertical-align:top;font-size:11px">
@@ -10326,6 +10423,13 @@ let _dashSources = null;
               style="padding:5px 8px;font-size:11px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:${ESTADO_COLORS[r.estado_licitacion||'pendiente']};font-weight:700;cursor:pointer;min-width:120px">
               ${ESTADOS.map(e => `<option value="${e}" ${e===(r.estado_licitacion||'pendiente')?'selected':''}>${ESTADO_LABELS[e]}</option>`).join('')}
             </select>
+          </td>
+          <td style="padding:10px;vertical-align:top;text-align:right">
+            ${presupMOVenta ? `
+              <div style="font-weight:700;color:var(--violet-600);font-size:12px;font-variant-numeric:tabular-nums">${_fmtMoneyCompact(presupMOVenta)}</div>
+              <div style="font-size:9px;color:var(--text-3)">venta MO</div>
+              ${presupMOCosto && presupMOCosto !== presupMOVenta ? `<div style="font-size:9px;color:var(--text-3)">costo: ${_fmtMoneyCompact(presupMOCosto)}</div>`:''}
+            ` : `<span style="font-size:11px;color:var(--text-3)">—</span>`}
           </td>
           <td style="padding:10px;vertical-align:top">
             ${isAdj ? `
@@ -10341,6 +10445,7 @@ let _dashSources = null;
                 onchange="updateLicField('${r.id}','monto_adjudicado',this.value)"
                 placeholder="USD" step="0.01"
                 style="width:100%;padding:5px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit;text-align:right">
+              ${deltaPct !== null ? `<div style="font-size:10px;color:${deltaColor};font-weight:700;margin-top:2px;text-align:right">${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}% vs ppto</div>`:''}
             ` : `<span style="font-size:11px;color:var(--text-3)">—</span>`}
           </td>
           <td style="padding:10px;vertical-align:top">
@@ -10359,11 +10464,12 @@ let _dashSources = null;
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead style="background:var(--surface-2)">
             <tr style="text-align:left">
-              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Alcance / Especialidad</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Alcance / Partida</th>
               <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Fecha necesidad</th>
               <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Estado</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;text-align:right">Presupuesto MO</th>
               <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Contratista</th>
-              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Monto</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Monto adj. + Δ</th>
               <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">F. adj.</th>
             </tr>
           </thead>
