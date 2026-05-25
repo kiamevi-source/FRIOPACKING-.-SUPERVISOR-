@@ -3186,11 +3186,22 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
       <!-- ─── HISTORIAL DE REPORTES ─── -->
       <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Historial de reportes</span></div>
+        <div class="sec-head">
+          <span class="sec-title">Historial de reportes</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="dash-last-update" style="font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums">—</span>
+            <span id="dash-auto-pill" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;background:rgba(16,163,74,.10);color:var(--success);letter-spacing:.03em">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:dashPulse 2s ease-in-out infinite"></span>
+              AUTO 60s
+            </span>
+            <button class="btn btn-outline btn-sm" onclick="refreshDashboardNow()" title="Refrescar ahora desde Supabase">⟳ Refrescar</button>
+          </div>
+        </div>
         <div class="sec-body" style="padding:0;">
           <div id="tabla-reportes-hist"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
         </div>
       </div>
+      <style>@keyframes dashPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>
     </div>
 
     <!-- ══ GANTT · MOTOR OPERATIVO V2 ══ -->
@@ -10080,6 +10091,94 @@ let _dashSources = null;
 
   console.log('%c✓ Tab Costos & Márgenes cargado',
     'background:#7c3aed;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTO-REFRESH DASHBOARD · refresca cargarDashboard() cada 60s
+// mientras el usuario está en el tab Dashboard.
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+  const REFRESH_MS = 60_000;
+  let _dashTimer = null;
+  let _dashActive = true;  // true cuando estamos en el tab dashboard
+
+  function setLastUpdate(ts){
+    const el = document.getElementById('dash-last-update');
+    if(!el) return;
+    const d = ts || new Date();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    const ss = String(d.getSeconds()).padStart(2,'0');
+    el.textContent = `Última: ${hh}:${mm}:${ss}`;
+  }
+
+  async function doRefresh(silent){
+    if(!currentProyecto || !currentProyecto.nombre) return;
+    if(typeof cargarDashboard !== 'function') return;
+    try{
+      await cargarDashboard();
+      setLastUpdate();
+      if(!silent && typeof showToast === 'function'){
+        showToast('Dashboard actualizado', 1800, 'success');
+      }
+    }catch(e){
+      console.warn('[dash-refresh] error:', e);
+    }
+  }
+
+  window.refreshDashboardNow = function(){ doRefresh(false); };
+
+  function startAuto(){
+    stopAuto();
+    _dashTimer = setInterval(() => {
+      if(_dashActive && currentProyecto && currentProyecto.nombre){
+        doRefresh(true);
+      }
+    }, REFRESH_MS);
+  }
+  function stopAuto(){
+    if(_dashTimer){ clearInterval(_dashTimer); _dashTimer = null; }
+  }
+
+  // Hook into showTab para saber si estamos en dashboard
+  const _origShowTab_dash = window.showTab;
+  window.showTab = function(tab){
+    if(typeof _origShowTab_dash === 'function') _origShowTab_dash(tab);
+    _dashActive = (tab === 'dashboard');
+    // Si vuelve al dashboard, hacer refresh inmediato (silencioso) y reiniciar timer
+    if(_dashActive){
+      doRefresh(true);
+      startAuto();
+    }
+  };
+
+  // Pausar polling cuando la pestaña del browser está oculta (ahorra requests)
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden){
+      stopAuto();
+    } else if(_dashActive){
+      startAuto();
+      doRefresh(true);
+    }
+  });
+
+  // Marcar timestamp inicial al cargar la primera vez (cuando el dashboard ya cargó)
+  // Hook en cargarProyecto: cuando se selecciona proyecto, arranca el ciclo
+  const _origCargarProyecto_dash = window.cargarProyecto;
+  window.cargarProyecto = async function(...args){
+    const r = (typeof _origCargarProyecto_dash === 'function') ? _origCargarProyecto_dash.apply(this, args) : undefined;
+    // esperar a que el cargarDashboard inicial termine, después arrancar timer
+    setTimeout(() => {
+      setLastUpdate();
+      startAuto();
+    }, 1500);
+    return r;
+  };
+
+  console.log('%c✓ Auto-refresh Dashboard cargado (60s)',
+    'background:#16a34a;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
 })();
 </script>
 </body>
