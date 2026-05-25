@@ -9948,9 +9948,11 @@ let _dashSources = null;
   };
 
   // Toggle expand/collapse de los componentes de una partida en la tabla
+  // Normalizamos a String para evitar mismatch entre number (DB) y string (onclick)
   window.toggleCostoExpand = function(id){
-    if(_costosExpanded.has(id)) _costosExpanded.delete(id);
-    else _costosExpanded.add(id);
+    const sid = String(id);
+    if(_costosExpanded.has(sid)) _costosExpanded.delete(sid);
+    else _costosExpanded.add(sid);
     renderCostos();
   };
 
@@ -9959,7 +9961,7 @@ let _dashSources = null;
     if(_costosExpanded.size === _costosRows.length){
       _costosExpanded.clear();
     } else {
-      _costosRows.forEach(r => _costosExpanded.add(r.id));
+      _costosRows.forEach(r => _costosExpanded.add(String(r.id)));
     }
     renderCostos();
   };
@@ -10166,7 +10168,7 @@ let _dashSources = null;
         const margenAbs = (Number(r.venta_total)||0) - (Number(r.costo_total)||0);
         const compArr = Array.isArray(r.componentes) ? r.componentes : [];
         const hasComp = compArr.length > 0;
-        const isExpanded = _costosExpanded.has(r.id);
+        const isExpanded = _costosExpanded.has(String(r.id));
         const compRows = hasComp && isExpanded ? compArr.map(c => {
           const t = tipoIcono[c.tipo] || tipoIcono.componente;
           const margenCompAbs = (Number(c.venta_total)||0) - (Number(c.costo_total)||0);
