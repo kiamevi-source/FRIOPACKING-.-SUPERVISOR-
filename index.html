@@ -3546,6 +3546,24 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
 
     <!-- ══ CONTRATAS ══ -->
     <div class="tab-content" id="tab-contratas">
+
+      <!-- LICITACIONES DEL GANTT -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <span class="sec-title">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand-500);margin-right:8px;vertical-align:middle"></span>
+            Licitaciones del proyecto
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="lic-summary" style="font-size:11px;color:var(--text-2)"></span>
+            <button class="btn btn-outline btn-sm" onclick="loadLicitaciones()" title="Refrescar">⟳</button>
+          </div>
+        </div>
+        <div class="sec-body" style="padding:0">
+          <div id="lic-content"><div class="loading" style="padding:20px"><span class="spinner"></span>Cargando…</div></div>
+        </div>
+      </div>
+
       <div class="sec-card">
         <div class="sec-head"><span class="sec-title">Evaluación de contratas — hoy</span></div>
         <div class="sec-body" style="padding:0;">
@@ -10179,6 +10197,226 @@ let _dashSources = null;
 
   console.log('%c✓ Auto-refresh Dashboard cargado (60s)',
     'background:#16a34a;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════
+// LICITACIONES (Fase 3 #6) · lee de tareas_gantt categoria=LICITACION
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+
+  const ESTADOS = ['pendiente','en_licitacion','adjudicado','contratado','cancelado'];
+  const ESTADO_LABELS = {
+    pendiente:'Pendiente', en_licitacion:'En licitación',
+    adjudicado:'Adjudicado', contratado:'Contratado', cancelado:'Cancelado'
+  };
+  const ESTADO_COLORS = {
+    pendiente:'#64748b', en_licitacion:'#d97706',
+    adjudicado:'#2563eb', contratado:'#16a34a', cancelado:'#dc2626'
+  };
+
+  let _licRows = [];
+
+  function _escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function _fmtMoney(v){
+    if(v === null || v === undefined || v === '' || isNaN(v)) return '';
+    return '$' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
+  }
+  function _fmtDate(v){
+    if(!v) return '—';
+    return new Date(v).toLocaleDateString('es-PE',{day:'2-digit',month:'short'});
+  }
+  function _daysUntil(d){
+    if(!d) return null;
+    return Math.ceil((new Date(d) - new Date())/86400000);
+  }
+  function _extractEspecialidad(nombre){
+    const n = (nombre||'').toLowerCase();
+    if(n.includes('panel')) return 'Paneles';
+    if(n.includes('lona')) return 'Lonas';
+    if(n.includes('aislamiento')) return 'Aislamiento';
+    if(n.includes('mecánic') || n.includes('mecanic')) {
+      if(n.includes('nh3')) return 'Mecánica NH3';
+      if(n.includes('glicol')) return 'Mecánica Glicol';
+      return 'Mecánica';
+    }
+    if(n.includes('eléctric') || n.includes('electric')) {
+      if(n.includes('frío') || n.includes('frio')) return 'Eléctrica frío';
+      if(n.includes('iluminación') || n.includes('iluminacion')) return 'Eléctrica iluminación';
+      return 'Eléctrica';
+    }
+    if(n.includes('termometr')) return 'Termometría';
+    return 'Otro';
+  }
+
+  window.loadLicitaciones = async function(){
+    const el = document.getElementById('lic-content');
+    const summaryEl = document.getElementById('lic-summary');
+    if(!currentProyecto || !currentProyecto.nombre){
+      el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-2);font-size:12px">Seleccioná un proyecto para ver sus licitaciones</div>`;
+      summaryEl.textContent = '';
+      return;
+    }
+    const cod = currentProyecto.cod || currentProyecto.nombre;
+    el.innerHTML = `<div class="loading" style="padding:20px"><span class="spinner"></span>Cargando…</div>`;
+    try{
+      const rows = await sbFetch(`/rest/v1/tareas_gantt?cod_proyecto=eq.${encodeURIComponent(cod)}&categoria=eq.LICITACION&order=fecha_inicio_base.asc&limit=200`);
+      _licRows = (rows||[]).map(r => ({
+        ...r,
+        _especialidad: _extractEspecialidad(r.nombre_tarea),
+        _diasParaInicio: _daysUntil(r.fecha_inicio_base),
+        _diasParaFin: _daysUntil(r.fecha_fin_base)
+      }));
+      renderLicitaciones();
+    }catch(err){
+      console.error('[lic]', err);
+      el.innerHTML = `<div style="padding:20px;color:var(--danger)">Error: ${_escapeHtml(err.message||err)}</div>`;
+    }
+  };
+
+  function renderLicitaciones(){
+    const el = document.getElementById('lic-content');
+    const summaryEl = document.getElementById('lic-summary');
+
+    if(!_licRows.length){
+      el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-2);font-size:12px">
+        No hay licitaciones detectadas en el Gantt de este proyecto.<br>
+        <span style="font-size:11px;color:var(--text-3)">Importá un Gantt con tareas tipo "Licitación …" en el tab Gantt.</span>
+      </div>`;
+      summaryEl.textContent = '0 licitaciones';
+      return;
+    }
+
+    // Resumen por estado
+    const byEstado = {};
+    _licRows.forEach(r => {
+      const e = r.estado_licitacion || 'pendiente';
+      byEstado[e] = (byEstado[e]||0) + 1;
+    });
+    summaryEl.innerHTML = ESTADOS.filter(e => byEstado[e]).map(e =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;font-weight:700;color:${ESTADO_COLORS[e]};margin-right:10px">
+        <span style="width:6px;height:6px;border-radius:50%;background:${ESTADO_COLORS[e]}"></span>${byEstado[e]} ${ESTADO_LABELS[e]}
+      </span>`).join('');
+
+    const rows = _licRows.map((r,i) => {
+      const isAdj = r.estado_licitacion === 'adjudicado' || r.estado_licitacion === 'contratado';
+      const urgenteFin = r._diasParaFin !== null && r._diasParaFin < 7 && r.estado_licitacion !== 'contratado' && r.estado_licitacion !== 'adjudicado';
+      return `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px;vertical-align:top">
+            <div style="font-weight:600;color:var(--text);font-size:12px">${_escapeHtml(r.nombre_tarea)}</div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px">
+              <span style="display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(46,125,209,.10);color:var(--brand-700);font-weight:600">${r._especialidad}</span>
+            </div>
+          </td>
+          <td style="padding:10px;vertical-align:top;font-size:11px">
+            <div style="color:var(--text)">${_fmtDate(r.fecha_inicio_base)} → ${_fmtDate(r.fecha_fin_base)}</div>
+            ${r._diasParaFin !== null ? `<div style="font-size:10px;color:${urgenteFin?'var(--danger)':'var(--text-3)'};margin-top:2px;font-weight:${urgenteFin?'700':'400'}">
+              ${r._diasParaFin < 0 ? `Vencida hace ${Math.abs(r._diasParaFin)}d` : r._diasParaFin === 0 ? 'Vence hoy' : `En ${r._diasParaFin}d`}
+            </div>`:''}
+          </td>
+          <td style="padding:10px;vertical-align:top">
+            <select onchange="updateLicEstado('${r.id}', this.value)"
+              style="padding:5px 8px;font-size:11px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:${ESTADO_COLORS[r.estado_licitacion||'pendiente']};font-weight:700;cursor:pointer;min-width:120px">
+              ${ESTADOS.map(e => `<option value="${e}" ${e===(r.estado_licitacion||'pendiente')?'selected':''}>${ESTADO_LABELS[e]}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:10px;vertical-align:top">
+            ${isAdj ? `
+              <input type="text" value="${_escapeHtml(r.contratista_adjudicado||'')}"
+                onchange="updateLicField('${r.id}','contratista_adjudicado',this.value)"
+                placeholder="Empresa adjudicada"
+                style="width:100%;padding:5px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+            ` : `<span style="font-size:11px;color:var(--text-3)">—</span>`}
+          </td>
+          <td style="padding:10px;vertical-align:top">
+            ${isAdj ? `
+              <input type="number" value="${r.monto_adjudicado||''}"
+                onchange="updateLicField('${r.id}','monto_adjudicado',this.value)"
+                placeholder="USD" step="0.01"
+                style="width:100%;padding:5px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit;text-align:right">
+            ` : `<span style="font-size:11px;color:var(--text-3)">—</span>`}
+          </td>
+          <td style="padding:10px;vertical-align:top">
+            ${isAdj ? `
+              <input type="date" value="${r.fecha_adjudicacion||''}"
+                onchange="updateLicField('${r.id}','fecha_adjudicacion',this.value || null)"
+                style="width:100%;padding:5px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+            ` : `<span style="font-size:11px;color:var(--text-3)">—</span>`}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="overflow:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead style="background:var(--surface-2)">
+            <tr style="text-align:left">
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Alcance / Especialidad</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Fecha necesidad</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Estado</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Contratista</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">Monto</th>
+              <th style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700">F. adj.</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // Persistir cambios en Supabase
+  async function _patchLic(id, payload){
+    try{
+      await sbFetch(`/rest/v1/tareas_gantt?id=eq.${id}`, {
+        method:'PATCH',
+        headers:{'Prefer':'return=minimal'},
+        body: JSON.stringify(payload)
+      });
+    }catch(err){
+      console.error('[lic-patch]', err);
+      if(typeof showToast === 'function') showToast('Error al guardar: '+(err.message||err), 4000, 'danger');
+    }
+  }
+
+  window.updateLicEstado = async function(id, estado){
+    const row = _licRows.find(r => r.id === id);
+    if(!row) return;
+    row.estado_licitacion = estado;
+    await _patchLic(id, { estado_licitacion: estado });
+    if(typeof showToast === 'function') showToast(`Estado: ${ESTADO_LABELS[estado]}`, 1500, 'success');
+    renderLicitaciones();
+  };
+
+  window.updateLicField = async function(id, field, value){
+    const row = _licRows.find(r => r.id === id);
+    if(!row) return;
+    row[field] = value;
+    const payload = {};
+    payload[field] = value === '' ? null : value;
+    await _patchLic(id, payload);
+  };
+
+  // Hook into showTab para auto-cargar al entrar al tab Contratas
+  const _origShowTab_lic = window.showTab;
+  window.showTab = function(tab){
+    if(typeof _origShowTab_lic === 'function') _origShowTab_lic(tab);
+    if(tab === 'contratas') loadLicitaciones();
+  };
+  const _origCargarProyecto_lic = window.cargarProyecto;
+  window.cargarProyecto = async function(...args){
+    const r = (typeof _origCargarProyecto_lic === 'function') ? _origCargarProyecto_lic.apply(this, args) : undefined;
+    setTimeout(loadLicitaciones, 800);
+    return r;
+  };
+
+  console.log('%c✓ Licitaciones cargado',
+    'background:#2E7DD1;color:#fff;padding:3px 10px;border-radius:4px;font-weight:700');
 })();
 </script>
 </body>
