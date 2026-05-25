@@ -9328,14 +9328,14 @@ let _dashSources = null;
   let _impRows = [];          // partidas parseadas (editables)
   let _impBatch = '';
 
-  const CATS = ['equipo','infraestructura','instalacion','tuberia','electrico','pem','gastos_generales','staff','otro'];
+  const CATS = ['equipo','materiales','infraestructura','instalacion','tuberia','electrico','pem','gastos_generales','staff','otro'];
   const CAT_LABELS = {
-    equipo:'Equipo', infraestructura:'Infraestructura', instalacion:'Instalación',
+    equipo:'Equipo', materiales:'Materiales', infraestructura:'Infraestructura', instalacion:'Instalación',
     tuberia:'Tubería', electrico:'Eléctrico', pem:'PEM',
     gastos_generales:'Gastos Generales', staff:'Staff', otro:'Otro'
   };
   const CAT_COLORS = {
-    equipo:'#2563eb', infraestructura:'#db2777', instalacion:'#d97706',
+    equipo:'#2563eb', materiales:'#0d9488', infraestructura:'#db2777', instalacion:'#d97706',
     tuberia:'#4f46e5', electrico:'#dc2626', pem:'#059669',
     gastos_generales:'#9333ea', staff:'#0891b2', otro:'#64748b'
   };
@@ -9344,7 +9344,18 @@ let _dashSources = null;
   function classifyPartida(descripcion, hoja, subcat){
     const d = (descripcion||'').toLowerCase() + ' ' + (subcat||'').toLowerCase();
     const h = (hoja||'').toLowerCase();
+    const sub = (subcat||'').toLowerCase().trim();
     const hay = (...keys) => keys.some(k => d.includes(k));
+
+    // PRIORIDAD: la sub-sección "Materiales" en una hoja de instalación → categoria = materiales
+    // (Los cotizadores parten cada hoja en "1. Materiales" + "2. Mano de obra")
+    if(sub.startsWith('materiales') || sub === 'materiales.' || sub === 'materiales'){
+      return 'materiales';
+    }
+    // Sub-sección "Mano de obra" → instalación (es servicio, no material)
+    if(sub.startsWith('mano de obra') || sub.includes('mano obra')){
+      return 'instalacion';
+    }
 
     if(h.includes('gastos generales') || h.includes('staff')){
       if(hay('residente','supervis','ingeniero','jefe')) return 'staff';
@@ -9824,12 +9835,12 @@ let _dashSources = null;
   'use strict';
 
   const COSTOS_CAT_LABELS = {
-    equipo:'Equipo', infraestructura:'Infraestructura', instalacion:'Instalación',
+    equipo:'Equipo', materiales:'Materiales', infraestructura:'Infraestructura', instalacion:'Instalación',
     tuberia:'Tubería', electrico:'Eléctrico', pem:'PEM',
     gastos_generales:'Gastos Generales', staff:'Staff', otro:'Otro'
   };
   const COSTOS_CAT_COLORS = {
-    equipo:'#2563eb', infraestructura:'#db2777', instalacion:'#d97706',
+    equipo:'#2563eb', materiales:'#0d9488', infraestructura:'#db2777', instalacion:'#d97706',
     tuberia:'#4f46e5', electrico:'#dc2626', pem:'#059669',
     gastos_generales:'#9333ea', staff:'#0891b2', otro:'#64748b'
   };
