@@ -3685,6 +3685,7 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
                       style="padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit">
                 <option value="">Todas las categorías</option>
               </select>
+              <button class="btn btn-outline btn-sm" onclick="toggleCostoExpandAll()" title="Expandir/colapsar todas las partidas">⇕ Expandir todo</button>
               <button class="btn btn-outline btn-sm" onclick="loadCostos(true)" title="Refrescar desde Supabase">⟳</button>
             </div>
           </div>
@@ -9825,6 +9826,9 @@ let _dashSources = null;
       impPresStep(3);
       try{ window.showToast(`✓ ${inserted} partidas importadas`, 3500, 'success'); }catch(e){}
 
+      // Invalidar cache del tab Costos para que muestre los datos nuevos
+      try{ if(typeof window._invalidateCostosCache === 'function') window._invalidateCostosCache(); }catch(e){}
+
       // ─── AUTO-VINCULAR licitaciones del Gantt con partidas del presupuesto ───
       // (la fn SQL hace match por keyword: NH3, Glicol, paneles, lonas, etc.)
       try{
@@ -9935,6 +9939,30 @@ let _dashSources = null;
 
   let _costosRows = [];
   let _costosLoadedFor = null;       // nombre_proyecto cacheado
+  let _costosExpanded = new Set();   // ids de partidas con componentes expandidos
+
+  // Exponer función para invalidar cache (la usa el importador al guardar)
+  window._invalidateCostosCache = function(){
+    _costosLoadedFor = null;
+    _costosRows = [];
+  };
+
+  // Toggle expand/collapse de los componentes de una partida en la tabla
+  window.toggleCostoExpand = function(id){
+    if(_costosExpanded.has(id)) _costosExpanded.delete(id);
+    else _costosExpanded.add(id);
+    renderCostos();
+  };
+
+  // Botón "Expandir / Colapsar todas" rápido
+  window.toggleCostoExpandAll = function(){
+    if(_costosExpanded.size === _costosRows.length){
+      _costosExpanded.clear();
+    } else {
+      _costosRows.forEach(r => _costosExpanded.add(r.id));
+    }
+    renderCostos();
+  };
 
   function _showCostos(which){
     ['noproj','empty','loading','view'].forEach(k => {
@@ -9985,7 +10013,7 @@ let _dashSources = null;
     _showCostos('loading');
     try{
       const enc = encodeURIComponent(projName);
-      const rows = await sbFetch(`/rest/v1/presupuestos?nombre_proyecto=eq.${enc}&order=item.asc&limit=2000`);
+      const rows = await sbFetch(`/rest/v1/presupuestos?nombre_proyecto=eq.${enc}&select=*,componentes&order=item.asc&limit=2000`);
       _costosRows = Array.isArray(rows) ? rows : [];
       _costosLoadedFor = projName;
       if(!_costosRows.length){
@@ -10126,24 +10154,61 @@ let _dashSources = null;
     if(filtered.length === 0){
       tbody.innerHTML = `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Sin resultados para los filtros aplicados</td></tr>`;
     } else {
+      // Iconos por tipo de componente
+      const tipoIcono = {
+        materiales:   {ic:'📦', lbl:'Materiales',    col:'#0d9488'},
+        mano_de_obra: {ic:'👷', lbl:'Mano de obra',  col:'#d97706'},
+        componente:   {ic:'⚙️', lbl:'Equipo',        col:'#2563eb'}
+      };
+
       tbody.innerHTML = filtered.map(r => {
         const cat = r.categoria || 'otro';
         const margenAbs = (Number(r.venta_total)||0) - (Number(r.costo_total)||0);
+        const compArr = Array.isArray(r.componentes) ? r.componentes : [];
+        const hasComp = compArr.length > 0;
+        const isExpanded = _costosExpanded.has(r.id);
+        const compRows = hasComp && isExpanded ? compArr.map(c => {
+          const t = tipoIcono[c.tipo] || tipoIcono.componente;
+          const margenCompAbs = (Number(c.venta_total)||0) - (Number(c.costo_total)||0);
+          return `
+            <tr style="background:rgba(46,125,209,.03);border-bottom:1px solid var(--border)">
+              <td style="padding:5px 10px 5px 30px;font-size:10px;color:var(--text-3);vertical-align:top">└</td>
+              <td style="padding:5px 10px;vertical-align:top">
+                <div style="font-size:11px;color:var(--text);display:flex;align-items:center;gap:6px">
+                  <span style="font-size:13px">${t.ic}</span>
+                  <span>${_escapeHtml(c.descripcion)}</span>
+                </div>
+              </td>
+              <td style="padding:5px 10px;vertical-align:top">
+                <span style="display:inline-block;padding:1px 6px;border-radius:4px;background:${t.col}22;color:${t.col};font-size:9px;font-weight:700;text-transform:uppercase">${t.lbl}</span>
+              </td>
+              <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;font-size:11px;color:var(--text-2)">${_fmtNum(c.cantidad)}<div style="font-size:9px;color:var(--text-3)">${c.unidad||''}</div></td>
+              <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;font-size:11px;color:var(--text-2)">${_fmtMoney(c.costo_total)}</td>
+              <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;font-size:10px;color:var(--text-3)">${_fmtMoneyCompact(margenCompAbs)}</td>
+              <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;font-size:11px;color:var(--text)">${_fmtMoney(c.venta_total)}</td>
+            </tr>
+          `;
+        }).join('') : '';
+
         return `
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:7px 10px;font-size:11px;color:var(--text-3);vertical-align:top">${r.item||''}</td>
+          <tr style="border-bottom:1px solid var(--border);${hasComp?'cursor:pointer':''}" ${hasComp?`onclick="toggleCostoExpand('${r.id}')"`:''}>
+            <td style="padding:7px 10px;font-size:11px;color:var(--text-3);vertical-align:top">
+              ${hasComp ? `<span style="display:inline-block;margin-right:4px;font-size:9px;color:var(--text-2);transition:transform .15s;${isExpanded?'transform:rotate(90deg)':''}">▶</span>` : ''}
+              ${r.item||''}
+            </td>
             <td style="padding:7px 10px;vertical-align:top">
-              <div style="font-weight:500;color:var(--text)">${_escapeHtml(r.descripcion)}</div>
-              ${r.subcategoria?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">↳ ${_escapeHtml(r.subcategoria)}</div>`:''}
+              <div style="font-weight:600;color:var(--text)">${_escapeHtml(r.descripcion)}</div>
+              ${hasComp ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${compArr.length} componente${compArr.length!==1?'s':''} ${isExpanded?'· click para colapsar':'· click para ver'}</div>` : ''}
             </td>
             <td style="padding:7px 10px;vertical-align:top">
               <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:5px;background:${COSTOS_CAT_COLORS[cat]}22;color:${COSTOS_CAT_COLORS[cat]};font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em">${COSTOS_CAT_LABELS[cat]||cat}</span>
             </td>
             <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${_fmtNum(r.cantidad)}<div style="font-size:9px;color:var(--text-3)">${r.unidad||''}</div></td>
-            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top">${_fmtMoney(r.costo_total)}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;font-weight:600">${_fmtMoney(r.costo_total)}</td>
             <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;vertical-align:top;color:${(Number(r.margen_pct)||0) >= 0.15 ? 'var(--success)' : 'var(--text-2)'}">${_fmtPct(r.margen_pct)}<div style="font-size:9px;color:var(--text-3)">${_fmtMoneyCompact(margenAbs)}</div></td>
-            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text);vertical-align:top">${_fmtMoney(r.venta_total)}</td>
+            <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);vertical-align:top">${_fmtMoney(r.venta_total)}</td>
           </tr>
+          ${compRows}
         `;
       }).join('');
     }
