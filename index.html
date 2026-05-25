@@ -9559,19 +9559,22 @@ let _dashSources = null;
 
     const detailSheets = wb.SheetNames.filter(sn => !META_SHEETS.has(sn) && !isSummarySheet(sn));
 
-    // REGLA (pedida por usuario):
-    //   - Si hay SUMMARY + DETALLE → ignorar SUMMARY, usar DETALLE
-    //     (la summary es el consolidado de las otras hojas, contarla = doble)
-    //   - Si SOLO hay SUMMARY (sin detalle) → usar SUMMARY
-    //   - Si SOLO hay DETALLE → usar DETALLE
+    // REGLA (actualizada por usuario · iteración 2):
+    //   - Si hay SUMMARY (RESUMEN) → usar SUMMARY (es el consolidado real,
+    //     incluye flete/desaduanaje/overhead que las hojas detalle ignoran)
+    //   - Si NO hay SUMMARY → fallback a hojas detalle
     let result = [];
     let strategy = '';
-    if(summarySheets.length && detailSheets.length){
-      strategy = 'detail-only (skip resumen — es consolidado)';
-      detailSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
-    } else if(summarySheets.length){
-      strategy = 'summary-only (no hay detalle)';
+    if(summarySheets.length){
+      strategy = 'summary-only (RESUMEN tiene el consolidado real)';
       summarySheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+      // Si el summary devolvió 0 partidas con datos monetarios, fallback a detalle
+      const tieneDinero = result.some(r => (r.costo_total||0) > 0 || (r.venta_total||0) > 0);
+      if(!tieneDinero && detailSheets.length){
+        strategy = 'fallback: summary sin $ → uso hojas detalle';
+        result = [];
+        detailSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
+      }
     } else {
       strategy = 'detail-only (no hay summary)';
       detailSheets.forEach(sn => result.push(...parseSheet(wb, sn)));
