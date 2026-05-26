@@ -4988,23 +4988,25 @@ async function pmoFetchLive(force = false) {
   _setPmoPill('syncing','sincronizando…');
 
   try {
-    const r = await fetch(PMO_URL, { cache:'no-store' });
-    if (!r.ok) throw new Error('PMO HTTP ' + r.status);
-    const html = await r.text();
-
-    // Extraer arrays inline window.PROJECTS y window.EQUIPOS_CSV
-    const projMatch = html.match(/window\.PROJECTS\s*=\s*(\[[\s\S]*?\])\s*;/);
-    const eqMatch   = html.match(/window\.EQUIPOS_CSV\s*=\s*(\[[\s\S]*?\])\s*;/);
-
-    let projects = [], equipos = [];
-    if (projMatch) {
-      try { projects = JSON.parse(projMatch[1]); }
-      catch(e) { try { projects = Function('"use strict";return (' + projMatch[1] + ')')(); } catch(_) {} }
+    // Leer equipos directamente desde la tabla espejo en Supabase Supervisor
+    // (rellenada con la data histórica del PMO live recuperada de git)
+    let equipos = [];
+    try {
+      const rows = await sbFetch('/rest/v1/equipos_pmo?select=doc,fecha,proveedor,proj,proj_csv,tipo,origen,fe,fer,so,etd,eta,mod,ref,st&order=doc.desc&limit=500');
+      equipos = Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      console.warn('equipos_pmo fetch falló, intentando HTML legacy:', e);
     }
-    if (eqMatch) {
-      try { equipos = JSON.parse(eqMatch[1]); }
-      catch(e) { try { equipos = Function('"use strict";return (' + eqMatch[1] + ')')(); } catch(_) {} }
-    }
+
+    // Derivar proyectos únicos a partir de los equipos (proj_csv → name)
+    const projMap = new Map();
+    equipos.forEach(e => {
+      const key = (e.proj_csv || e.proj || '').trim();
+      if (!key) return;
+      if (!projMap.has(key)) projMap.set(key, { name: key, code: key, equiposCount: 0 });
+      projMap.get(key).equiposCount++;
+    });
+    const projects = Array.from(projMap.values());
 
     const hash = _pmoHash(JSON.stringify(projects) + '|' + JSON.stringify(equipos));
     const changed = hash !== _pmoState.hash;
@@ -5059,14 +5061,18 @@ function pmoCurrentProject() {
     || (p.name||'').toLowerCase().includes(nm) || nm.includes((p.name||'').toLowerCase()));
 }
 
-// Buscar equipos del proyecto activo en EQUIPOS_CSV
+// Buscar equipos del proyecto activo en equipos_pmo (Supabase)
 function pmoCurrentEquipos() {
   if (!currentProyecto) return [];
-  const nm = (currentProyecto.nombre||'').toLowerCase();
-  const cod = (currentProyecto.cod||'').toLowerCase();
+  const nm = (currentProyecto.nombre||'').toLowerCase().trim();
+  const cod = (currentProyecto.cod||'').toLowerCase().trim();
+  if (!nm && !cod) return [];
   return (_pmoState.equipos||[]).filter(e => {
-    const p = (e.proj_csv||'').toLowerCase();
-    return p === nm || p.includes(nm) || nm.includes(p) || (cod && p.includes(cod));
+    const pc = (e.proj_csv||'').toLowerCase();
+    const pj = (e.proj||'').toLowerCase();
+    // Match si nombre o código coincide en proj_csv O proj
+    return (nm && (pc === nm || pj === nm || pc.includes(nm) || pj.includes(nm) || nm.includes(pc) || nm.includes(pj)))
+        || (cod && (pc.includes(cod) || pj.includes(cod)));
   });
 }
 
