@@ -6238,7 +6238,8 @@ function closeImportPreview() {
 function mpSetFilter(f) {
   _mpState.filter = f;
   document.querySelectorAll('.mp-filt').forEach(b => b.classList.toggle('active', b.dataset.filt === f));
-  mpRender();
+  // Diferir para que el click del botón termine antes de re-render masivo
+  setTimeout(() => { try { mpRender(); } catch(e){ console.error('mpSetFilter render err', e); } }, 0);
 }
 
 function mpFilteredRows() {
@@ -6252,7 +6253,17 @@ function mpFilteredRows() {
   });
 }
 
+let _mpRenderScheduled = false;
 function mpRender() {
+  // Coalescer múltiples llamadas en un mismo frame
+  if (_mpRenderScheduled) return;
+  _mpRenderScheduled = true;
+  requestAnimationFrame(() => {
+    _mpRenderScheduled = false;
+    try { _mpRenderImpl(); } catch (e) { console.error('mpRender impl error:', e); }
+  });
+}
+function _mpRenderImpl() {
   const body = document.getElementById('mp-body');
   if (!body) return;
   _mpState.search = document.getElementById('mp-search-input')?.value || '';
@@ -6328,17 +6339,21 @@ function mpToggleRow(idx, checked) {
 function mpUpdateRow(idx, field, value) {
   const r = _mpState.rows.find(x => x.idx === idx);
   if (!r) return;
+  // Booleanos pueden llegar como string "true"/"false" desde inline onclick
+  if (field === 'es_hito' && typeof value === 'string') value = (value === 'true');
   r[field] = value;
+  // Diferir re-render para que el evento change del <select> termine primero.
+  // Si re-renderizamos sincrónico, destruimos el elemento que disparó el evento
+  // y Safari ocasionalmente crashea la página → reload → pérdida de sesión.
+  const needsRender = (field === 'categoria' || field === 'tipo_medicion' || field === 'es_hito');
   if (field === 'categoria') {
     r.tipo_medicion = autoDetectMedicion(r.nombre, value, r.es_hito);
-    mpRender();
   }
-  if (field === 'tipo_medicion') mpRender();
   if (field === 'es_hito') {
-    // Al togglear hito: recalcular tipo_medicion para que respete el default
-    // ('pct_manual' si es hito; el de la categoría si no lo es).
     r.tipo_medicion = autoDetectMedicion(r.nombre, r.categoria, r.es_hito);
-    mpRender();
+  }
+  if (needsRender) {
+    setTimeout(() => { try { mpRender(); } catch(e){ console.error('mpRender err', e); } }, 0);
   }
 }
 function mpUpdateSummary() {
