@@ -3235,6 +3235,9 @@ canvas.curva-canvas{position:absolute;inset:0;width:100%;height:100%;}
           </div>
         </section>
 
+        <!-- ─── INSIGHTS TIMELINE (Etapa 3) ─── -->
+        <div class="gx-insights" id="gx-insights"></div>
+
         <!-- ─── HERO EJECUTIVO (nuevo diseño cinematográfico) ─── -->
         <section class="gx-hero" id="gx-hero" data-severity="ok">
           <div class="gx-hero-bg"></div>
@@ -10626,19 +10629,16 @@ let _dashSources = null;
   function _$(id){ return document.getElementById(id); }
 
   // Calcular métricas del HERO usando las funciones existentes
+  // FIX: _ganttState es const y no está en window. Usamos recoveryDetectar()
+  // que tiene acceso por scope léxico al estado del Gantt.
   function computeHero(){
-    const all = (window._ganttState && _ganttState.tasks) || [];
-    if(all.length === 0) return null;
-
     let det = null;
     try { det = (typeof recoveryDetectar === 'function') ? recoveryDetectar() : null; } catch(e){}
-    if(!det){
-      det = { severity:'ok', atrasadas:[], sinMov:[], critRiesgo:[], spi:null, total: all.length, activate:false };
-    }
+    if(!det || !det.total) return null;
 
     // Score de salud (0-100): SPI ponderado + penaltys por atrasadas/sinMov/críticas
     const spi = det.spi != null ? det.spi : 1;
-    const totalTasks = Math.max(1, all.length);
+    const totalTasks = Math.max(1, det.total);
     const pctAtrasadas = det.atrasadas.length / totalTasks;
     const pctSinMov = det.sinMov.length / totalTasks;
     const pctCritRiesgo = det.critRiesgo.length / totalTasks;
@@ -10807,11 +10807,76 @@ let _dashSources = null;
     }
   };
 
+  // ── Etapa 3: INSIGHTS TIMELINE ──
+  // Chips animados que reemplazan las cards verbose de alertas
+  window.renderGanttInsights = function(){
+    const el = _$('gx-insights');
+    if(!el) return;
+    let det = null;
+    try { det = (typeof recoveryDetectar === 'function') ? recoveryDetectar() : null; } catch(e){}
+    if(!det || !det.total){ el.innerHTML = ''; el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+
+    const chips = [];
+    if(det.atrasadas.length > 0){
+      chips.push({
+        tone:'critical', ic:'⚠', num: det.atrasadas.length, lbl:'atrasadas',
+        hint:`Tareas con fecha fin superada y avance &lt; 100%`,
+        action: () => { try { setGanttFilter('atrasado'); } catch(e){} }
+      });
+    }
+    if(det.critRiesgo.length > 0){
+      chips.push({
+        tone:'critical', ic:'◆', num: det.critRiesgo.length, lbl:'críticas en riesgo',
+        hint:`Tareas marcadas como críticas con desvío negativo`,
+        action: () => { try { setGanttFilter('critico'); } catch(e){} }
+      });
+    }
+    if(det.sinMov.length > 0){
+      chips.push({
+        tone:'warn', ic:'⏸', num: det.sinMov.length, lbl:'sin movimiento',
+        hint:`Sin actualización hace 5+ días, posible bloqueo`,
+        action: () => { try { setGanttFilter('sinmov'); } catch(e){} }
+      });
+    }
+    if(det.spi != null){
+      const spiTone = det.spi < 0.85 ? 'critical' : det.spi < 0.95 ? 'warn' : 'good';
+      chips.push({
+        tone: spiTone, ic:'∿', num: det.spi.toFixed(2), lbl:'SPI',
+        hint:`Schedule Performance Index · &lt; 0.95 indica desvío`,
+        action: null
+      });
+    }
+    if(chips.length === 0){
+      chips.push({
+        tone:'good', ic:'✓', num: det.total, lbl:'tareas en plan',
+        hint:`Sin desviaciones detectadas`, action:null
+      });
+    }
+
+    el.innerHTML = chips.map((c, i) => `
+      <button class="gx-chip" data-tone="${c.tone}" style="animation-delay:${i*80}ms" ${c.action?'':'disabled'}
+              data-action-idx="${i}" title="${c.hint}">
+        <span class="gx-chip-ic">${c.ic}</span>
+        <span class="gx-chip-num">${c.num}</span>
+        <span class="gx-chip-lbl">${c.lbl}</span>
+        <span class="gx-chip-hint">${c.hint}</span>
+      </button>
+    `).join('');
+    // Wire onclick (evitar inline para mejor manejo)
+    el.querySelectorAll('.gx-chip[data-action-idx]').forEach(btn => {
+      const idx = +btn.dataset.actionIdx;
+      const fn = chips[idx] && chips[idx].action;
+      if(fn) btn.addEventListener('click', fn);
+    });
+  };
+
   // Hookear con el flow existente: renderizar tras cargar/refresh del Gantt
   const _origRenderCategoryDashboard = window.renderCategoryDashboard;
   window.renderCategoryDashboard = function(...args){
     if(typeof _origRenderCategoryDashboard === 'function') _origRenderCategoryDashboard.apply(this, args);
     try { renderGanttHero(); } catch(e) { console.warn('[gx-hero]', e); }
+    try { renderGanttInsights(); } catch(e) { console.warn('[gx-insights]', e); }
   };
   const _origRefreshRecoveryBanner = window.refreshRecoveryBanner;
   window.refreshRecoveryBanner = function(...args){
@@ -10820,6 +10885,7 @@ let _dashSources = null;
     const old = document.getElementById('recovery-banner');
     if(old) old.classList.add('gx-replaced');
     try { renderGanttHero(); } catch(e){}
+    try { renderGanttInsights(); } catch(e){}
   };
 
   console.log('%c✓ Gantt Hero cargado',
@@ -11114,6 +11180,291 @@ let _dashSources = null;
   margin: 0 !important;
   padding: 0 !important;
   transition: max-height .3s var(--gx-ease-smooth);
+}
+
+/* ═══ ETAPA 3 · INSIGHTS TIMELINE (chips animados) ═══ */
+.gx-insights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 24px 0;
+}
+.gx-insights.hidden { display: none; }
+.gx-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -.005em;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: gxChipIn .35s var(--gx-ease-spring) forwards;
+  transition: transform .2s var(--gx-ease-smooth), box-shadow .2s var(--gx-ease-smooth), border-color .2s;
+  isolation: isolate;
+}
+.gx-chip[disabled] { cursor: default; }
+.gx-chip:not([disabled]):hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(11,23,57,.10);
+}
+@keyframes gxChipIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.gx-chip-ic {
+  font-size: 13px;
+  display: inline-flex;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  align-items: center; justify-content: center;
+  background: rgba(15,23,42,.06);
+}
+.gx-chip[data-tone="critical"] {
+  background: rgba(254,226,226,.7);
+  border-color: rgba(220,38,38,.18);
+  color: #991b1b;
+}
+.gx-chip[data-tone="critical"] .gx-chip-ic { background: rgba(220,38,38,.18); color: #dc2626; }
+.gx-chip[data-tone="critical"] .gx-chip-num { color: #dc2626; }
+.gx-chip[data-tone="critical"]:not([disabled])::before {
+  content:''; position:absolute; inset:-2px; border-radius:100px;
+  background: radial-gradient(circle, rgba(220,38,38,.25), transparent 70%);
+  filter: blur(8px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity .25s;
+}
+.gx-chip[data-tone="critical"]:not([disabled]):hover::before { opacity: 1; }
+
+.gx-chip[data-tone="warn"] {
+  background: rgba(254,243,199,.7);
+  border-color: rgba(217,119,6,.18);
+  color: #78350f;
+}
+.gx-chip[data-tone="warn"] .gx-chip-ic { background: rgba(217,119,6,.18); color: #d97706; }
+.gx-chip[data-tone="warn"] .gx-chip-num { color: #d97706; }
+
+.gx-chip[data-tone="good"] {
+  background: rgba(220,252,231,.7);
+  border-color: rgba(34,197,94,.18);
+  color: #14532d;
+}
+.gx-chip[data-tone="good"] .gx-chip-ic { background: rgba(34,197,94,.18); color: #16a34a; }
+.gx-chip[data-tone="good"] .gx-chip-num { color: #16a34a; }
+
+.gx-chip-num {
+  font-family: 'Manrope','Inter',sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  margin-right: 2px;
+}
+.gx-chip-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.gx-chip-hint {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--navy-900);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s var(--gx-ease-smooth);
+  box-shadow: 0 8px 24px rgba(11,23,57,.20);
+  z-index: 100;
+}
+.gx-chip:hover .gx-chip-hint {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.gx-chip-hint::after {
+  content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+  border:5px solid transparent; border-top-color: var(--navy-900);
+}
+
+/* ═══ ETAPA 4 · TOOLBAR FLOATING CHIPS + REDUCCIÓN DE RUIDO ═══ */
+/* Toolbar más limpio: menos bordes, fondo translúcido, chips en vez de buttons-blocky */
+.gantt-card .gantt-toolbar {
+  background: rgba(255,255,255,.5) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-radius: 16px !important;
+  border: 1px solid rgba(15,23,42,.06) !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 2px 10px rgba(11,23,57,.04);
+  margin: 0 24px 14px !important;
+}
+.gantt-card .gantt-toolbar .gtb-tag {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-3) !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 4px !important;
+}
+.gantt-card .gantt-toolbar .gtb-group {
+  display: inline-flex;
+  gap: 2px !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  background: rgba(15,23,42,.05) !important;
+  border: none !important;
+}
+.gantt-card .gantt-toolbar .gtb-btn {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--text-2) !important;
+  transition: all .18s var(--gx-ease-smooth);
+}
+.gantt-card .gantt-toolbar .gtb-btn:hover {
+  background: rgba(255,255,255,.8) !important;
+  color: var(--text) !important;
+  transform: translateY(-1px);
+}
+.gantt-card .gantt-toolbar .gtb-btn.active {
+  background: #fff !important;
+  color: var(--navy-800) !important;
+  box-shadow: 0 2px 8px rgba(11,23,57,.10), inset 0 0 0 1px rgba(15,23,42,.05) !important;
+  font-weight: 700 !important;
+}
+.gantt-card .gantt-toolbar .gtb-stat {
+  border: none !important;
+  background: rgba(255,255,255,.7) !important;
+  border-radius: 100px !important;
+  padding: 5px 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.gantt-card .gantt-toolbar .gtb-stat .num {
+  font-family: 'Manrope','Inter',sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+}
+.gantt-card .gantt-toolbar .gtb-stat.danger {
+  background: rgba(254,226,226,.8) !important;
+  color: #991b1b !important;
+}
+.gantt-card .gantt-toolbar .gtb-stat.warn {
+  background: rgba(254,243,199,.8) !important;
+  color: #92400e !important;
+}
+.gantt-card .gantt-toolbar .gtb-stat.success {
+  background: rgba(220,252,231,.8) !important;
+  color: #14532d !important;
+}
+
+/* Sub-tabs por categoría: chips elegantes */
+.gantt-card .gantt-subtabs {
+  padding: 0 24px 14px !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  display: flex;
+  gap: 6px !important;
+  flex-wrap: wrap;
+}
+.gantt-card .gantt-subtabs .gst-chip {
+  background: rgba(255,255,255,.6) !important;
+  border: 1px solid rgba(15,23,42,.06) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px !important;
+  padding: 7px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--text-2) !important;
+  transition: all .18s var(--gx-ease-smooth);
+}
+.gantt-card .gantt-subtabs .gst-chip:hover {
+  background: rgba(255,255,255,.9) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(11,23,57,.06);
+}
+.gantt-card .gantt-subtabs .gst-chip.active {
+  background: linear-gradient(135deg, var(--navy-800), var(--navy-700)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(11,23,57,.25);
+}
+.gantt-card .gantt-subtabs .gst-chip.active .gst-cnt {
+  background: rgba(255,255,255,.20) !important;
+  color: #fff !important;
+}
+.gantt-card .gantt-subtabs .gst-chip .gst-cnt {
+  background: rgba(15,23,42,.08) !important;
+  border-radius: 100px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  margin-left: 4px;
+}
+
+/* Header del sec-card: menos pesado */
+.gantt-card .sec-head {
+  border-bottom: none !important;
+  background: transparent !important;
+  padding-bottom: 6px !important;
+}
+.gantt-card .sec-head .sec-title {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: -.01em !important;
+}
+
+/* Reducir glow/borders del card padre */
+.gantt-card.sec-card {
+  border: 1px solid rgba(15,23,42,.04) !important;
+  box-shadow: 0 1px 4px rgba(11,23,57,.04), 0 30px 80px -40px rgba(11,23,57,.10) !important;
+  border-radius: 22px !important;
+}
+
+/* Compactar HERO en estado idle (cuando no hay tasks) */
+.gx-hero[data-severity="idle"] {
+  padding: 0;
+}
+.gx-hero[data-severity="idle"] .gx-hero-inner {
+  padding: 16px 20px;
+}
+.gx-hero[data-severity="idle"] .gx-title {
+  font-size: 16px;
+}
+.gx-hero[data-severity="idle"] .gx-sub {
+  font-size: 12px;
+}
+.gx-hero[data-severity="idle"] .gx-status {
+  margin-bottom: 6px;
+  font-size: 9.5px;
+  padding: 3px 7px;
+}
+.gx-hero[data-severity="idle"] .gx-hero-glow {
+  width: 250px; height: 250px;
+  filter: blur(50px);
 }
 </style>
 </body>
